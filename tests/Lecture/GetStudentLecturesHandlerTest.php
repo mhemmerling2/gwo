@@ -11,6 +11,7 @@ use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollment;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -81,10 +82,12 @@ final class BulkLectureRepository implements LectureRepositoryInterface
     ) {
     }
 
+    #[Override]
     public function save(Lecture $lecture): void
     {
     }
 
+    #[Override]
     public function getById(StringId $id): ?Lecture
     {
         ++$this->singleLookupCount;
@@ -98,6 +101,11 @@ final class BulkLectureRepository implements LectureRepositoryInterface
         return null;
     }
 
+    /**
+     * @param list<StringId> $ids
+     * @return list<Lecture>
+     */
+    #[Override]
     public function getByIds(array $ids): array
     {
         ++$this->bulkLookupCount;
@@ -125,21 +133,25 @@ final readonly class BulkEnrollmentRepository implements LectureEnrollmentReposi
     ) {
     }
 
+    #[Override]
     public function save(LectureEnrollment $enrollment): bool
     {
         return true;
     }
 
+    #[Override]
     public function deleteByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
+    #[Override]
     public function existsByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
+    #[Override]
     public function countByLecture(StringId $lectureId): int
     {
         return 0;
@@ -148,6 +160,7 @@ final readonly class BulkEnrollmentRepository implements LectureEnrollmentReposi
     /**
      * @return list<StringId>
      */
+    #[Override]
     public function getLectureIdsByStudent(StringId $studentId): array
     {
         return $this->lectureIds;

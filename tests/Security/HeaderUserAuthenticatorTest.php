@@ -9,6 +9,7 @@ use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -105,10 +106,12 @@ final readonly class StubUserRepository implements UserRepositoryInterface
     ) {
     }
 
+    #[Override]
     public function save(User $user): void
     {
     }
 
+    #[Override]
     public function getById(StringId $id): ?User
     {
         if ($this->user === null) {
@@ -118,6 +121,7 @@ final readonly class StubUserRepository implements UserRepositoryInterface
         return $this->user->getId()->equals($id) ? $this->user : null;
     }
 
+    #[Override]
     public function getByApiKey(string $apiKey): ?User
     {
         if ($this->user === null) {

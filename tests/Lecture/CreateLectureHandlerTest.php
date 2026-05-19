@@ -11,6 +11,7 @@ use Gwo\AppsRecruitmentTask\Lecture\InvalidLectureDataException;
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -92,6 +93,9 @@ final class CreateLectureHandlerTest extends TestCase
         ));
     }
 
+    /**
+     * @return array<string, array{int}>
+     */
     public static function invalidStudentLimits(): array
     {
         return [
@@ -100,6 +104,9 @@ final class CreateLectureHandlerTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, array{string, string}>
+     */
     public static function invalidLectureDates(): array
     {
         return [
@@ -113,11 +120,13 @@ final class InMemoryLectureRepository implements LectureRepositoryInterface
 {
     public ?Lecture $savedLecture = null;
 
+    #[Override]
     public function save(Lecture $lecture): void
     {
         $this->savedLecture = $lecture;
     }
 
+    #[Override]
     public function getById(StringId $id): ?Lecture
     {
         if ($this->savedLecture === null) {
@@ -127,6 +136,11 @@ final class InMemoryLectureRepository implements LectureRepositoryInterface
         return $this->savedLecture->getId()->equals($id) ? $this->savedLecture : null;
     }
 
+    /**
+     * @param list<StringId> $ids
+     * @return list<Lecture>
+     */
+    #[Override]
     public function getByIds(array $ids): array
     {
         if ($this->savedLecture === null) {

@@ -8,6 +8,7 @@ use Gwo\AppsRecruitmentTask\Persistence\DatabaseClient;
 use Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -22,19 +23,14 @@ final class SeedDemoUsersCommandTest extends KernelTestCase
 
         self::assertSame(0, $commandTester->execute([]));
 
-        $output = $commandTester->getDisplay();
-
-        preg_match('/DEMO_LECTURER_API_KEY=([a-f0-9]{64})/', $output, $lecturerMatch);
-        preg_match('/DEMO_STUDENT_API_KEY=([a-f0-9]{64})/', $output, $studentMatch);
-
-        self::assertArrayHasKey(1, $lecturerMatch);
-        self::assertArrayHasKey(1, $studentMatch);
+        $lecturerApiKey = $this->extractDemoApiKey($commandTester->getDisplay(), 'DEMO_LECTURER_API_KEY');
+        $studentApiKey = $this->extractDemoApiKey($commandTester->getDisplay(), 'DEMO_STUDENT_API_KEY');
 
         /** @var UserRepositoryInterface $userRepository */
         $userRepository = static::getContainer()->get(UserRepositoryInterface::class);
 
-        $lecturer = $userRepository->getByApiKey($lecturerMatch[1]);
-        $student = $userRepository->getByApiKey($studentMatch[1]);
+        $lecturer = $userRepository->getByApiKey($lecturerApiKey);
+        $student = $userRepository->getByApiKey($studentApiKey);
 
         self::assertNotNull($lecturer);
         self::assertNotNull($student);
@@ -50,24 +46,25 @@ final class SeedDemoUsersCommandTest extends KernelTestCase
         $commandTester = $this->createCommandTester();
 
         self::assertSame(0, $commandTester->execute([]));
-        preg_match('/DEMO_LECTURER_API_KEY=([a-f0-9]{64})/', $commandTester->getDisplay(), $firstRunMatch);
-        self::assertArrayHasKey(1, $firstRunMatch);
+        $firstLecturerApiKey = $this->extractDemoApiKey($commandTester->getDisplay(), 'DEMO_LECTURER_API_KEY');
 
         self::assertSame(0, $commandTester->execute([]));
-        preg_match('/DEMO_LECTURER_API_KEY=([a-f0-9]{64})/', $commandTester->getDisplay(), $secondRunMatch);
-        self::assertArrayHasKey(1, $secondRunMatch);
+        $secondLecturerApiKey = $this->extractDemoApiKey($commandTester->getDisplay(), 'DEMO_LECTURER_API_KEY');
 
-        self::assertNotSame($firstRunMatch[1], $secondRunMatch[1]);
+        self::assertNotSame($firstLecturerApiKey, $secondLecturerApiKey);
 
         /** @var UserRepositoryInterface $userRepository */
         $userRepository = static::getContainer()->get(UserRepositoryInterface::class);
 
-        self::assertNull($userRepository->getByApiKey($firstRunMatch[1]));
-        self::assertNotNull($userRepository->getByApiKey($secondRunMatch[1]));
+        self::assertNull($userRepository->getByApiKey($firstLecturerApiKey));
+        self::assertNotNull($userRepository->getByApiKey($secondLecturerApiKey));
     }
 
+    #[Override]
     protected function setUp(): void
     {
+        parent::setUp();
+
         self::bootKernel();
 
         /** @var DatabaseClient $databaseClient */
@@ -81,8 +78,26 @@ final class SeedDemoUsersCommandTest extends KernelTestCase
 
     private function createCommandTester(): CommandTester
     {
-        $application = new Application(static::$kernel);
+        $kernel = static::$kernel;
+        self::assertNotNull($kernel);
+
+        $application = new Application($kernel);
 
         return new CommandTester($application->find('app:users:seed-demo'));
+    }
+
+    private function extractDemoApiKey(string $output, string $variableName): string
+    {
+        $pattern = sprintf('/%s=([a-f0-9]{64})/', preg_quote($variableName, '/'));
+
+        if (preg_match($pattern, $output, $matches) !== 1) {
+            self::fail(sprintf('Expected %s in command output.', $variableName));
+        }
+
+        if (!isset($matches[1])) {
+            self::fail(sprintf('Expected capture group for %s.', $variableName));
+        }
+
+        return $matches[1];
     }
 }

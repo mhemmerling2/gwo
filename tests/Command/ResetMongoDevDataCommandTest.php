@@ -10,6 +10,7 @@ use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -43,8 +44,11 @@ final class ResetMongoDevDataCommandTest extends KernelTestCase
         self::assertNull($userRepository->getByApiKey(str_repeat('a', 64)));
     }
 
+    #[Override]
     protected function setUp(): void
     {
+        parent::setUp();
+
         self::bootKernel();
 
         /** @var DatabaseClient $databaseClient */
@@ -58,7 +62,10 @@ final class ResetMongoDevDataCommandTest extends KernelTestCase
 
     private function createCommandTester(): CommandTester
     {
-        $application = new Application(static::$kernel);
+        $kernel = static::$kernel;
+        self::assertNotNull($kernel);
+
+        $application = new Application($kernel);
 
         return new CommandTester($application->find('app:mongodb:reset-dev-data'));
     }

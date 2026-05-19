@@ -17,6 +17,7 @@ use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -199,10 +200,12 @@ final class InMemoryEnrollmentLectureRepository implements LectureRepositoryInte
     ) {
     }
 
+    #[Override]
     public function save(Lecture $lecture): void
     {
     }
 
+    #[Override]
     public function getById(StringId $id): ?Lecture
     {
         if ($this->lecture === null) {
@@ -212,6 +215,11 @@ final class InMemoryEnrollmentLectureRepository implements LectureRepositoryInte
         return $this->lecture->getId()->equals($id) ? $this->lecture : null;
     }
 
+    /**
+     * @param list<StringId> $ids
+     * @return list<Lecture>
+     */
+    #[Override]
     public function getByIds(array $ids): array
     {
         if ($this->lecture === null) {
@@ -239,6 +247,7 @@ final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryI
     ) {
     }
 
+    #[Override]
     public function save(LectureEnrollment $enrollment): bool
     {
         if (!$this->saveResult) {
@@ -254,11 +263,13 @@ final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryI
         return true;
     }
 
+    #[Override]
     public function deleteByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
+    #[Override]
     public function existsByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         foreach ($this->enrollments as $enrollment) {
@@ -273,6 +284,7 @@ final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryI
         return false;
     }
 
+    #[Override]
     public function countByLecture(StringId $lectureId): int
     {
         if ($this->countByLecture >= 0) {
@@ -288,6 +300,7 @@ final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryI
     /**
      * @return list<StringId>
      */
+    #[Override]
     public function getLectureIdsByStudent(StringId $studentId): array
     {
         return [];
@@ -296,27 +309,33 @@ final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryI
 
 final class InMemoryEnrollmentRequestRepository implements EnrollmentRequestRepositoryInterface
 {
+    #[Override]
     public function queue(StringId $requestId, StringId $lectureId, StringId $studentId): void
     {
     }
 
+    #[Override]
     public function markProcessing(StringId $requestId): void
     {
     }
 
+    #[Override]
     public function markCompleted(StringId $requestId): void
     {
     }
 
+    #[Override]
     public function markFailed(StringId $requestId, ApiErrorCode $failureCode, string $failureMessage): void
     {
     }
 
+    #[Override]
     public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest
     {
         return null;
     }
 
+    #[Override]
     public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool
     {
         return false;
@@ -327,30 +346,36 @@ final class TrackingEnrollmentRequestRepository implements EnrollmentRequestRepo
 {
     public ?EnrollmentRequestStatus $lastStatus = null;
 
+    #[Override]
     public function queue(StringId $requestId, StringId $lectureId, StringId $studentId): void
     {
     }
 
+    #[Override]
     public function markProcessing(StringId $requestId): void
     {
         $this->lastStatus = EnrollmentRequestStatus::PROCESSING;
     }
 
+    #[Override]
     public function markCompleted(StringId $requestId): void
     {
         $this->lastStatus = EnrollmentRequestStatus::COMPLETED;
     }
 
+    #[Override]
     public function markFailed(StringId $requestId, ApiErrorCode $failureCode, string $failureMessage): void
     {
         $this->lastStatus = EnrollmentRequestStatus::FAILED;
     }
 
+    #[Override]
     public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest
     {
         return null;
     }
 
+    #[Override]
     public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool
     {
         return false;

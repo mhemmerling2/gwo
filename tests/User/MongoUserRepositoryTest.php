@@ -21,8 +21,10 @@ final class MongoUserRepositoryTest extends ApiTestCase
             ->findOne(['id' => (string) $user->getId()]);
 
         self::assertNotNull($document);
-        self::assertArrayHasKey('apiKeyHash', $document);
-        self::assertArrayNotHasKey('apiKey', $document);
+        /** @var array<string, mixed> $storedUser */
+        $storedUser = $document->getArrayCopy();
+        self::assertArrayHasKey('apiKeyHash', $storedUser);
+        self::assertArrayNotHasKey('apiKey', $storedUser);
 
         /** @var UserRepositoryInterface $userRepository */
         $userRepository = $this->httpClient->getContainer()->get(UserRepositoryInterface::class);

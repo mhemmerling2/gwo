@@ -73,6 +73,9 @@ final class ApplicationSmokeTest extends ApiTestCase
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function validLecturePayload(): array
     {
         return [

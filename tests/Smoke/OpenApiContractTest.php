@@ -92,6 +92,7 @@ final class OpenApiContractTest extends ApiTestCase
             $this->authHeaders($lecturer),
         );
         $lecture = $this->decodeJsonResponse($lectureResponse);
+        self::assertIsString($lecture['id']);
 
         $response = $this->makeJsonRequest(
             'POST',
@@ -133,6 +134,7 @@ final class OpenApiContractTest extends ApiTestCase
             $this->authHeaders($lecturer),
         );
         $lecture = $this->decodeJsonResponse($lectureResponse);
+        self::assertIsString($lecture['id']);
 
         $queueResponse = $this->makeJsonRequest(
             'POST',
@@ -141,6 +143,7 @@ final class OpenApiContractTest extends ApiTestCase
             $this->authHeaders($student),
         );
         $queuedEnrollment = $this->decodeJsonResponse($queueResponse);
+        self::assertIsString($queuedEnrollment['requestId']);
 
         $statusResponse = $this->makeRequest(
             'GET',

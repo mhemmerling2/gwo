@@ -11,6 +11,7 @@ use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use MongoDB\Client;
+use Override;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,10 +23,13 @@ abstract class ApiTestCase extends WebTestCase
 {
     use InteractsWithMessenger;
 
-    protected readonly KernelBrowser $httpClient;
+    protected KernelBrowser $httpClient;
 
+    #[Override]
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->httpClient = static::createClient();
 
         /** @var DatabaseClient $databaseClient */
@@ -37,6 +41,9 @@ abstract class ApiTestCase extends WebTestCase
         $indexManager->ensureIndexes();
     }
 
+    /**
+     * @param array<string, string> $headers
+     */
     protected function makeRequest(string $method, string $uri, string $content = '', array $headers = []): Response
     {
         $this->httpClient->request(
@@ -51,6 +58,10 @@ abstract class ApiTestCase extends WebTestCase
         return $this->httpClient->getResponse();
     }
 
+    /**
+     * @param array<string, mixed>|string $payload
+     * @param array<string, string> $headers
+     */
     protected function makeJsonRequest(string $method, string $uri, array|string $payload = [], array $headers = []): Response
     {
         $content = is_string($payload)
@@ -86,6 +97,9 @@ abstract class ApiTestCase extends WebTestCase
         $userRepository->save($user);
     }
 
+    /**
+     * @return array<string, string>
+     */
     protected function authHeaders(User $user): array
     {
         return [
@@ -93,6 +107,9 @@ abstract class ApiTestCase extends WebTestCase
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function decodeJsonResponse(Response $response): array
     {
         $content = $response->getContent();
@@ -101,7 +118,10 @@ abstract class ApiTestCase extends WebTestCase
             self::fail('Response content could not be read.');
         }
 
-        return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        /** @var array<string, mixed> $decoded */
+        $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+
+        return $decoded;
     }
 
     protected function assertJsonErrorResponse(Response $response, int $statusCode, string $error, ?string $message = null): void
@@ -127,7 +147,10 @@ abstract class ApiTestCase extends WebTestCase
 
     protected function databaseName(): string
     {
-        return (string) $this->httpClient->getContainer()->getParameter('database_name');
+        $databaseName = $this->httpClient->getContainer()->getParameter('database_name');
+        self::assertIsString($databaseName);
+
+        return $databaseName;
     }
 
     protected function processEnrollmentQueue(int $messages = -1): void

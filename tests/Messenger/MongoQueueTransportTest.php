@@ -10,6 +10,7 @@ use Gwo\AppsRecruitmentTask\Messenger\Transport\MongoQueueTransportFactory;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use MongoDB\Client;
 use MongoDB\Collection;
+use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\Envelope;
@@ -22,11 +23,19 @@ final class MongoQueueTransportTest extends KernelTestCase
     private Client $client;
     private string $databaseName;
 
+    #[Override]
     protected function setUp(): void
     {
+        parent::setUp();
+
         self::bootKernel();
-        $this->client = static::getContainer()->get(Client::class);
-        $this->databaseName = (string) static::getContainer()->getParameter('database_name');
+
+        $client = static::getContainer()->get(Client::class);
+        self::assertInstanceOf(Client::class, $client);
+        $this->client = $client;
+        $databaseName = static::getContainer()->getParameter('database_name');
+        self::assertIsString($databaseName);
+        $this->databaseName = $databaseName;
         $this->client->dropDatabase($this->databaseName);
     }
 
