@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Client;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
+use Override;
 
 final class MongoEnrollmentRequestRepository implements EnrollmentRequestRepositoryInterface
 {
@@ -22,7 +24,7 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
         $this->collection = $client->selectCollection($databaseName, self::COLLECTION_NAME);
     }
 
-    #[\Override]
+    #[Override]
     public function queue(StringId $requestId, StringId $lectureId, StringId $studentId): void
     {
         $now = $this->now();
@@ -44,11 +46,19 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
         );
     }
 
-    #[\Override]
+    #[Override]
     public function markProcessing(StringId $requestId): void
     {
         $this->collection->updateOne(
-            ['id' => (string) $requestId],
+            [
+                'id' => (string) $requestId,
+                'status' => [
+                    '$in' => [
+                        EnrollmentRequestStatus::QUEUED->value,
+                        EnrollmentRequestStatus::PROCESSING->value,
+                    ],
+                ],
+            ],
             [
                 '$set' => [
                     'status' => EnrollmentRequestStatus::PROCESSING->value,
@@ -60,13 +70,22 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
         );
     }
 
-    #[\Override]
+    #[Override]
     public function markCompleted(StringId $requestId): void
     {
         $now = $this->now();
 
         $this->collection->updateOne(
-            ['id' => (string) $requestId],
+            [
+                'id' => (string) $requestId,
+                'status' => [
+                    '$in' => [
+                        EnrollmentRequestStatus::QUEUED->value,
+                        EnrollmentRequestStatus::PROCESSING->value,
+                        EnrollmentRequestStatus::FAILED->value,
+                    ],
+                ],
+            ],
             [
                 '$set' => [
                     'status' => EnrollmentRequestStatus::COMPLETED->value,
@@ -79,13 +98,21 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
         );
     }
 
-    #[\Override]
+    #[Override]
     public function markFailed(StringId $requestId, ApiErrorCode $failureCode, string $failureMessage): void
     {
         $now = $this->now();
 
         $this->collection->updateOne(
-            ['id' => (string) $requestId],
+            [
+                'id' => (string) $requestId,
+                'status' => [
+                    '$in' => [
+                        EnrollmentRequestStatus::QUEUED->value,
+                        EnrollmentRequestStatus::PROCESSING->value,
+                    ],
+                ],
+            ],
             [
                 '$set' => [
                     'status' => EnrollmentRequestStatus::FAILED->value,
@@ -98,7 +125,24 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
         );
     }
 
-    #[\Override]
+    #[Override]
+    public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool
+    {
+        $document = $this->collection->findOne([
+            'lectureId' => (string) $lectureId,
+            'studentId' => (string) $studentId,
+            'status' => [
+                '$in' => [
+                    EnrollmentRequestStatus::QUEUED->value,
+                    EnrollmentRequestStatus::PROCESSING->value,
+                ],
+            ],
+        ]);
+
+        return $document instanceof BSONDocument;
+    }
+
+    #[Override]
     public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest
     {
         $document = $this->collection->findOne([
@@ -148,26 +192,42 @@ final class MongoEnrollmentRequestRepository implements EnrollmentRequestReposit
             return null;
         }
 
+        $statusEnum = EnrollmentRequestStatus::tryFrom($status);
+
+        if ($statusEnum === null) {
+            return null;
+        }
+
+        $failureCodeEnum = null;
+
+        if ($failureCode !== null) {
+            $failureCodeEnum = ApiErrorCode::tryFrom($failureCode);
+
+            if ($failureCodeEnum === null) {
+                return null;
+            }
+        }
+
         return new EnrollmentRequest(
             id: new StringId($id),
             lectureId: new StringId($lectureId),
             studentId: new StringId($studentId),
-            status: EnrollmentRequestStatus::from($status),
+            status: $statusEnum,
             createdAt: $this->toDateTimeImmutable($createdAt),
             updatedAt: $this->toDateTimeImmutable($updatedAt),
             processedAt: $processedAt instanceof UTCDateTime ? $this->toDateTimeImmutable($processedAt) : null,
-            failureCode: $failureCode !== null ? ApiErrorCode::from($failureCode) : null,
+            failureCode: $failureCodeEnum,
             failureMessage: $failureMessage,
         );
     }
 
     private function now(): UTCDateTime
     {
-        return new UTCDateTime(new \DateTimeImmutable());
+        return new UTCDateTime(new DateTimeImmutable());
     }
 
-    private function toDateTimeImmutable(UTCDateTime $dateTime): \DateTimeImmutable
+    private function toDateTimeImmutable(UTCDateTime $dateTime): DateTimeImmutable
     {
-        return \DateTimeImmutable::createFromMutable($dateTime->toDateTime());
+        return DateTimeImmutable::createFromMutable($dateTime->toDateTime());
     }
 }

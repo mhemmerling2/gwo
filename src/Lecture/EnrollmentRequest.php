@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 
@@ -14,9 +15,9 @@ final readonly class EnrollmentRequest
         private StringId $lectureId,
         private StringId $studentId,
         private EnrollmentRequestStatus $status,
-        private \DateTimeImmutable $createdAt,
-        private \DateTimeImmutable $updatedAt,
-        private ?\DateTimeImmutable $processedAt = null,
+        private DateTimeImmutable $createdAt,
+        private DateTimeImmutable $updatedAt,
+        private ?DateTimeImmutable $processedAt = null,
         private ?ApiErrorCode $failureCode = null,
         private ?string $failureMessage = null,
     ) {
@@ -42,17 +43,17 @@ final readonly class EnrollmentRequest
         return $this->status;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): \DateTimeImmutable
+    public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function getProcessedAt(): ?\DateTimeImmutable
+    public function getProcessedAt(): ?DateTimeImmutable
     {
         return $this->processedAt;
     }

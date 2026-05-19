@@ -7,19 +7,14 @@ namespace Gwo\AppsRecruitmentTask\Controller;
 use Gwo\AppsRecruitmentTask\Controller\Dto\CreateLectureRequestDto;
 use Gwo\AppsRecruitmentTask\Controller\Dto\ErrorResponseDto;
 use Gwo\AppsRecruitmentTask\Controller\Dto\LectureResponseDto;
-use Gwo\AppsRecruitmentTask\Lecture\CreateLectureCommand;
+use Gwo\AppsRecruitmentTask\Lecture\CreateLectureHandler;
 use Gwo\AppsRecruitmentTask\Lecture\InvalidLectureDataException;
-use Gwo\AppsRecruitmentTask\Lecture\Lecture;
-use Gwo\AppsRecruitmentTask\Messenger\CommandBus;
-use Gwo\AppsRecruitmentTask\Messenger\HandlerFailedExceptionUnwrapper;
-use Gwo\AppsRecruitmentTask\Messenger\HandledMessageResultExtractor;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\User\User;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
@@ -29,7 +24,7 @@ final readonly class CreateLectureController
     public const ROUTE_NAME = 'lecture_create';
 
     public function __construct(
-        private CommandBus $commandBus,
+        private CreateLectureHandler $createLectureHandler,
     ) {
     }
 
@@ -39,7 +34,7 @@ final readonly class CreateLectureController
     ): JsonResponse
     {
         try {
-            $lecture = $this->dispatchCreateLectureCommand($requestDto->toCommand($user->getId()));
+            $lecture = ($this->createLectureHandler)($requestDto->toCommand($user->getId()));
         } catch (InvalidLectureDataException $exception) {
             return $this->errorResponse(
                 ApiErrorCode::INVALID_LECTURE_DATA,
@@ -50,30 +45,6 @@ final readonly class CreateLectureController
                 ApiErrorCode::INVALID_REQUEST,
                 $exception->getMessage()
             );
-        } catch (HandlerFailedException $exception) {
-            $unwrappedException = HandlerFailedExceptionUnwrapper::unwrap(
-                exception: $exception,
-                preferredExceptionClasses: [
-                    InvalidLectureDataException::class,
-                    InvalidArgumentException::class,
-                ],
-            );
-
-            if ($unwrappedException instanceof InvalidLectureDataException) {
-                return $this->errorResponse(
-                    ApiErrorCode::INVALID_LECTURE_DATA,
-                    $unwrappedException->getMessage()
-                );
-            }
-
-            if ($unwrappedException instanceof InvalidArgumentException) {
-                return $this->errorResponse(
-                    ApiErrorCode::INVALID_REQUEST,
-                    $unwrappedException->getMessage()
-                );
-            }
-
-            throw $exception;
         }
 
         return new JsonResponse(
@@ -90,17 +61,5 @@ final readonly class CreateLectureController
             data: new ErrorResponseDto(error: $error, message: $message),
             status: Response::HTTP_BAD_REQUEST,
         );
-    }
-
-    private function dispatchCreateLectureCommand(CreateLectureCommand $command): Lecture
-    {
-        $envelope = $this->commandBus->dispatch($command);
-        $result = HandledMessageResultExtractor::extract($envelope);
-
-        if (!$result instanceof Lecture) {
-            throw new \RuntimeException('Create lecture handler did not return a Lecture result.');
-        }
-
-        return $result;
     }
 }

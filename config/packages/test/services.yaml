@@ -1,0 +1,11 @@
+services:
+    _defaults:
+        public: true
+
+    Gwo\AppsRecruitmentTask\Persistence\DatabaseClient: ~
+    Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager: ~
+    Gwo\AppsRecruitmentTask\User\UserRepositoryInterface: ~
+    Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface: ~
+    Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface: ~
+    Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface: ~
+    MongoDB\Client: ~

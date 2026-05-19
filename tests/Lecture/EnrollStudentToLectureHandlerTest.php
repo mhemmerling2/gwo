@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests\Lecture;
 
-use Gwo\AppsRecruitmentTask\Clock\ClockInterface;
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequest;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface;
+use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestStatus;
+use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureCommand;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureHandler;
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollment;
@@ -23,13 +25,15 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
     #[Test]
     public function itEnrollsStudentWhenLectureHasNotStartedYet(): void
     {
+        $startDate = new DateTimeImmutable('+1 day');
+        $endDate = $startDate->modify('+2 hours');
         $lecture = new Lecture(
             id: new StringId('lecture-1'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 2,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: $startDate,
+            endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
         $enrollmentRepository = new InMemoryEnrollmentRepository();
@@ -37,12 +41,13 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             $lectureRepository,
             $enrollmentRepository,
             new InMemoryEnrollmentRequestRepository(),
-            new FixedClock(new \DateTimeImmutable('2026-06-01T09:00:00+02:00')),
         );
 
-        $enrollment = $handler->handle(new StringId('lecture-1'), new StringId('student-1'));
+        $handler(new EnrollStudentToLectureCommand(
+            lectureId: new StringId('lecture-1'),
+            studentId: new StringId('student-1'),
+        ));
 
-        self::assertInstanceOf(LectureEnrollment::class, $enrollment);
         self::assertTrue($enrollmentRepository->existsByLectureAndStudent(new StringId('lecture-1'), new StringId('student-1')));
         self::assertSame(1, $enrollmentRepository->countByLecture(new StringId('lecture-1')));
     }
@@ -50,37 +55,43 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
     #[Test]
     public function itRejectsEnrollmentWhenLectureAlreadyStarted(): void
     {
+        $startDate = new DateTimeImmutable('-1 hour');
+        $endDate = $startDate->modify('+2 hours');
         $lecture = new Lecture(
             id: new StringId('lecture-1'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 2,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: $startDate,
+            endDate: $endDate,
         );
         $handler = new EnrollStudentToLectureHandler(
             new InMemoryEnrollmentLectureRepository($lecture),
             new InMemoryEnrollmentRepository(),
             new InMemoryEnrollmentRequestRepository(),
-            new FixedClock(new \DateTimeImmutable('2026-06-01T10:00:00+02:00')),
         );
 
         $this->expectException(LectureEnrollmentException::class);
         $this->expectExceptionMessage('Cannot enroll to a lecture that has already started.');
 
-        $handler->handle(new StringId('lecture-1'), new StringId('student-1'));
+        $handler(new EnrollStudentToLectureCommand(
+            lectureId: new StringId('lecture-1'),
+            studentId: new StringId('student-1'),
+        ));
     }
 
     #[Test]
     public function itRejectsWhenStudentIsAlreadyEnrolled(): void
     {
+        $startDate = new DateTimeImmutable('+1 day');
+        $endDate = $startDate->modify('+2 hours');
         $lecture = new Lecture(
             id: new StringId('lecture-1'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 2,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: $startDate,
+            endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
         $enrollmentRepository = new InMemoryEnrollmentRepository();
@@ -92,11 +103,13 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             $lectureRepository,
             $enrollmentRepository,
             new InMemoryEnrollmentRequestRepository(),
-            new FixedClock(new \DateTimeImmutable('2026-06-01T09:00:00+02:00')),
         );
 
         try {
-            $handler->handle(new StringId('lecture-1'), new StringId('student-1'));
+            $handler(new EnrollStudentToLectureCommand(
+                lectureId: new StringId('lecture-1'),
+                studentId: new StringId('student-1'),
+            ));
             self::fail('Expected already enrolled exception to be thrown.');
         } catch (LectureEnrollmentException $exception) {
             self::assertSame(
@@ -109,13 +122,15 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
     #[Test]
     public function itRejectsWhenLectureStudentLimitWouldBeExceeded(): void
     {
+        $startDate = new DateTimeImmutable('+1 day');
+        $endDate = $startDate->modify('+2 hours');
         $lecture = new Lecture(
             id: new StringId('lecture-1'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 1,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: $startDate,
+            endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
         $enrollmentRepository = new InMemoryEnrollmentRepository(
@@ -126,11 +141,13 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             $lectureRepository,
             $enrollmentRepository,
             new InMemoryEnrollmentRequestRepository(),
-            new FixedClock(new \DateTimeImmutable('2026-06-01T09:00:00+02:00')),
         );
 
         try {
-            $handler->handle(new StringId('lecture-1'), new StringId('student-2'));
+            $handler(new EnrollStudentToLectureCommand(
+                lectureId: new StringId('lecture-1'),
+                studentId: new StringId('student-2'),
+            ));
             self::fail('Expected lecture full exception to be thrown.');
         } catch (LectureEnrollmentException $exception) {
             self::assertSame(
@@ -139,18 +156,39 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             );
         }
     }
-}
 
-final class FixedClock implements ClockInterface
-{
-    public function __construct(
-        private readonly \DateTimeImmutable $now,
-    ) {
-    }
-
-    public function now(): \DateTimeImmutable
+    #[Test]
+    public function itCompletesTrackedRequestWhenStudentIsAlreadyEnrolled(): void
     {
-        return $this->now;
+        $startDate = new DateTimeImmutable('+1 day');
+        $endDate = $startDate->modify('+2 hours');
+        $lecture = new Lecture(
+            id: new StringId('lecture-1'),
+            lecturerId: new StringId('lecturer-1'),
+            name: 'Architecture Basics',
+            studentLimit: 2,
+            startDate: $startDate,
+            endDate: $endDate,
+        );
+        $enrollmentRepository = new InMemoryEnrollmentRepository();
+        $enrollmentRepository->save(new LectureEnrollment(
+            lectureId: new StringId('lecture-1'),
+            studentId: new StringId('student-1'),
+        ));
+        $requestRepository = new TrackingEnrollmentRequestRepository();
+        $handler = new EnrollStudentToLectureHandler(
+            new InMemoryEnrollmentLectureRepository($lecture),
+            $enrollmentRepository,
+            $requestRepository,
+        );
+
+        $handler(new EnrollStudentToLectureCommand(
+            lectureId: new StringId('lecture-1'),
+            studentId: new StringId('student-1'),
+            requestId: new StringId('request-1'),
+        ));
+
+        self::assertSame(EnrollmentRequestStatus::COMPLETED, $requestRepository->lastStatus);
     }
 }
 
@@ -277,5 +315,44 @@ final class InMemoryEnrollmentRequestRepository implements EnrollmentRequestRepo
     public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest
     {
         return null;
+    }
+
+    public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool
+    {
+        return false;
+    }
+}
+
+final class TrackingEnrollmentRequestRepository implements EnrollmentRequestRepositoryInterface
+{
+    public ?EnrollmentRequestStatus $lastStatus = null;
+
+    public function queue(StringId $requestId, StringId $lectureId, StringId $studentId): void
+    {
+    }
+
+    public function markProcessing(StringId $requestId): void
+    {
+        $this->lastStatus = EnrollmentRequestStatus::PROCESSING;
+    }
+
+    public function markCompleted(StringId $requestId): void
+    {
+        $this->lastStatus = EnrollmentRequestStatus::COMPLETED;
+    }
+
+    public function markFailed(StringId $requestId, ApiErrorCode $failureCode, string $failureMessage): void
+    {
+        $this->lastStatus = EnrollmentRequestStatus::FAILED;
+    }
+
+    public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest
+    {
+        return null;
+    }
+
+    public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool
+    {
+        return false;
     }
 }

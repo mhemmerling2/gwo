@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
+use JsonSerializable;
+use Override;
 
-final readonly class LectureResponseDto implements \JsonSerializable
+final readonly class LectureResponseDto implements JsonSerializable
 {
     public function __construct(
         private string $id,
@@ -25,8 +27,8 @@ final readonly class LectureResponseDto implements \JsonSerializable
             lecturerId: (string) $lecture->getLecturerId(),
             name: $lecture->getName(),
             studentLimit: $lecture->getStudentLimit(),
-            startDate: $lecture->getStartDate()->format(\DATE_ATOM),
-            endDate: $lecture->getEndDate()->format(\DATE_ATOM),
+            startDate: $lecture->getStartDate()->format(DATE_ATOM),
+            endDate: $lecture->getEndDate()->format(DATE_ATOM),
         );
     }
 
@@ -40,7 +42,7 @@ final readonly class LectureResponseDto implements \JsonSerializable
      *   endDate: string
      * }
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [

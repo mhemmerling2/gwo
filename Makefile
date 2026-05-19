@@ -42,8 +42,7 @@ phpunit: ## execute project unit tests
 		docker compose run --rm app sh -lc "rm -rf var/cache/test && XDEBUG_MODE=coverage ./vendor/bin/phpunit --testdox --coverage-text --colors=never"
 
 .PHONY: coverage
-coverage: ## execute tests with text coverage summary
-		docker compose run --rm app sh -lc "rm -rf var/cache/test && XDEBUG_MODE=coverage ./vendor/bin/phpunit --testdox --coverage-text --colors=never"
+coverage: phpunit ## execute tests with text coverage summary
 
 .PHONY: coverage-html
 coverage-html: ## generate HTML coverage report in var/coverage/html

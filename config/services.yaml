@@ -13,12 +13,6 @@ services:
             - '../src/Kernel.php'
             - '../src/Controller/Dto/'
 
-    Gwo\AppsRecruitmentTask\Persistence\DatabaseClient:
-        public: true
-        arguments:
-            $databaseUri: '%database_uri%'
-            $databaseName: '%database_name%'
-
     Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager:
         arguments:
             $databaseName: '%database_name%'
@@ -27,51 +21,42 @@ services:
         arguments:
             - '%database_uri%'
 
-    Gwo\AppsRecruitmentTask\User\UserRepositoryInterface:
-        alias: Gwo\AppsRecruitmentTask\User\MongoUserRepository
-        public: true
+    Gwo\AppsRecruitmentTask\Security\ApiKeyEncoder:
+        arguments:
+            $secret: '%kernel.secret%'
 
     Gwo\AppsRecruitmentTask\User\MongoUserRepository:
         arguments:
             $databaseName: '%database_name%'
 
-    Gwo\AppsRecruitmentTask\Security\ApiKeyEncoder:
-        arguments:
-            $secret: '%kernel.secret%'
-
-    Gwo\AppsRecruitmentTask\Clock\ClockInterface:
-        alias: Gwo\AppsRecruitmentTask\Clock\SystemClock
-
-    Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface:
-        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureRepository
-        public: true
-
     Gwo\AppsRecruitmentTask\Lecture\MongoLectureRepository:
         arguments:
             $databaseName: '%database_name%'
-
-    Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface:
-        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureEnrollmentRepository
-        public: true
 
     Gwo\AppsRecruitmentTask\Lecture\MongoLectureEnrollmentRepository:
         arguments:
             $databaseName: '%database_name%'
 
-    Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface:
-        alias: Gwo\AppsRecruitmentTask\Lecture\MongoEnrollmentRequestRepository
-        public: true
-
     Gwo\AppsRecruitmentTask\Lecture\MongoEnrollmentRequestRepository:
         arguments:
             $databaseName: '%database_name%'
 
-    Gwo\AppsRecruitmentTask\Messenger\CommandBus:
-        alias: Gwo\AppsRecruitmentTask\Messenger\SymfonyCommandBus
-
-    Gwo\AppsRecruitmentTask\Messenger\QueryBus:
-        alias: Gwo\AppsRecruitmentTask\Messenger\SymfonyQueryBus
-
     Gwo\AppsRecruitmentTask\Messenger\Transport\MongoQueueTransportFactory:
         arguments:
             $databaseName: '%database_name%'
+
+    Gwo\AppsRecruitmentTask\Persistence\DatabaseClient:
+        arguments:
+            $databaseName: '%database_name%'
+
+    Gwo\AppsRecruitmentTask\User\UserRepositoryInterface:
+        alias: Gwo\AppsRecruitmentTask\User\MongoUserRepository
+
+    Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface:
+        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureRepository
+
+    Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface:
+        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureEnrollmentRepository
+
+    Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface:
+        alias: Gwo\AppsRecruitmentTask\Lecture\MongoEnrollmentRequestRepository

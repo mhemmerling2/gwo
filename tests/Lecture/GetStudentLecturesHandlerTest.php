@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests\Lecture;
 
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Lecture\GetStudentLecturesHandler;
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollment;
@@ -23,24 +24,24 @@ final class GetStudentLecturesHandlerTest extends TestCase
             lecturerId: new StringId('lecturer-1'),
             name: 'Earliest',
             studentLimit: 10,
-            startDate: new \DateTimeImmutable('2026-06-01T08:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T08:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T10:00:00+02:00'),
         );
         $latest = new Lecture(
             id: new StringId('lecture-2'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Latest',
             studentLimit: 10,
-            startDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T14:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T14:00:00+02:00'),
         );
         $middle = new Lecture(
             id: new StringId('lecture-3'),
             lecturerId: new StringId('lecturer-1'),
             name: 'Middle',
             studentLimit: 10,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T11:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T10:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T11:00:00+02:00'),
         );
 
         $lectureRepository = new BulkLectureRepository([
@@ -56,7 +57,7 @@ final class GetStudentLecturesHandlerTest extends TestCase
         ]);
         $handler = new GetStudentLecturesHandler($lectureRepository, $enrollmentRepository);
 
-        $lectures = $handler->handle(new StringId('student-1'));
+        $lectures = $handler(new StringId('student-1'));
 
         self::assertSame(0, $lectureRepository->singleLookupCount);
         self::assertSame(1, $lectureRepository->bulkLookupCount);

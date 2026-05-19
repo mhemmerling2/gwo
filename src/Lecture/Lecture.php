@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 
 final readonly class Lecture
@@ -13,8 +14,8 @@ final readonly class Lecture
         private StringId $lecturerId,
         private string $name,
         private int $studentLimit,
-        private \DateTimeImmutable $startDate,
-        private \DateTimeImmutable $endDate,
+        private DateTimeImmutable $startDate,
+        private DateTimeImmutable $endDate,
     ) {
     }
 
@@ -38,12 +39,12 @@ final readonly class Lecture
         return $this->studentLimit;
     }
 
-    public function getStartDate(): \DateTimeImmutable
+    public function getStartDate(): DateTimeImmutable
     {
         return $this->startDate;
     }
 
-    public function getEndDate(): \DateTimeImmutable
+    public function getEndDate(): DateTimeImmutable
     {
         return $this->endDate;
     }

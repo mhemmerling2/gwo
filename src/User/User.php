@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\User;
 
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use LogicException;
+use Override;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -43,19 +45,19 @@ final readonly class User implements UserInterface
     /**
      * @return list<string>
      */
-    #[\Override]
+    #[Override]
     public function getRoles(): array
     {
         return [$this->role->toSecurityRole()];
     }
 
-    #[\Override]
+    #[Override]
     public function getUserIdentifier(): string
     {
         $identifier = (string) $this->id;
 
         if ($identifier === '') {
-            throw new \LogicException('User identifier cannot be empty.');
+            throw new LogicException('User identifier cannot be empty.');
         }
 
         return $identifier;

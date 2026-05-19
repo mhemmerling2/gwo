@@ -6,9 +6,11 @@ namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
 use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureCommand;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestStatus;
+use JsonSerializable;
+use Override;
 use RuntimeException;
 
-final readonly class QueuedEnrollmentResponseDto implements \JsonSerializable
+final readonly class QueuedEnrollmentResponseDto implements JsonSerializable
 {
     public function __construct(
         private string $requestId,
@@ -35,7 +37,7 @@ final readonly class QueuedEnrollmentResponseDto implements \JsonSerializable
     /**
      * @return array{requestId: string, status: string, lectureId: string, studentId: string}
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [

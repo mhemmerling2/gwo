@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
+use JsonSerializable;
+use Override;
 
-final readonly class ErrorResponseDto implements \JsonSerializable
+final readonly class ErrorResponseDto implements JsonSerializable
 {
     public function __construct(
         private ApiErrorCode $error,
@@ -17,7 +19,7 @@ final readonly class ErrorResponseDto implements \JsonSerializable
     /**
      * @return array{error: string, message: string}
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [

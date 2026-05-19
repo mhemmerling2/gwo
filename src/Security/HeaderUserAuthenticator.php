@@ -7,6 +7,7 @@ namespace Gwo\AppsRecruitmentTask\Security;
 use Gwo\AppsRecruitmentTask\Controller\Dto\ErrorResponseDto;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
+use Override;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,13 +28,13 @@ final class HeaderUserAuthenticator extends AbstractAuthenticator implements Aut
     ) {
     }
 
-    #[\Override]
+    #[Override]
     public function supports(Request $request): bool
     {
         return $request->headers->has(self::API_KEY_HEADER);
     }
 
-    #[\Override]
+    #[Override]
     public function authenticate(Request $request): SelfValidatingPassport
     {
         $apiKey = $request->headers->get(self::API_KEY_HEADER);
@@ -60,7 +61,7 @@ final class HeaderUserAuthenticator extends AbstractAuthenticator implements Aut
         );
     }
 
-    #[\Override]
+    #[Override]
     public function onAuthenticationSuccess(
         Request $request,
         TokenInterface $token,
@@ -69,7 +70,7 @@ final class HeaderUserAuthenticator extends AbstractAuthenticator implements Aut
         return null;
     }
 
-    #[\Override]
+    #[Override]
     public function onAuthenticationFailure(
         Request $request,
         AuthenticationException $exception
@@ -77,7 +78,7 @@ final class HeaderUserAuthenticator extends AbstractAuthenticator implements Aut
         return $this->createUnauthorizedResponse($exception->getMessageKey());
     }
 
-    #[\Override]
+    #[Override]
     public function start(
         Request $request,
         ?AuthenticationException $authException = null

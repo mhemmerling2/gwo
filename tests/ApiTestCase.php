@@ -10,11 +10,12 @@ use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
 use Gwo\AppsRecruitmentTask\Util\StringId;
-use Gwo\AppsRecruitmentTask\Messenger\HandlerFailedExceptionUnwrapper;
+use MongoDB\Client;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Throwable;
 use Zenstruck\Messenger\Test\InteractsWithMessenger;
 
 abstract class ApiTestCase extends WebTestCase
@@ -54,7 +55,7 @@ abstract class ApiTestCase extends WebTestCase
     {
         $content = is_string($payload)
             ? $payload
-            : json_encode($payload, \JSON_THROW_ON_ERROR);
+            : json_encode($payload, JSON_THROW_ON_ERROR);
 
         return $this->makeRequest(
             $method,
@@ -100,7 +101,7 @@ abstract class ApiTestCase extends WebTestCase
             self::fail('Response content could not be read.');
         }
 
-        return json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
     }
 
     protected function assertJsonErrorResponse(Response $response, int $statusCode, string $error, ?string $message = null): void
@@ -116,6 +117,19 @@ abstract class ApiTestCase extends WebTestCase
         }
     }
 
+    protected function mongoClient(): Client
+    {
+        /** @var Client $client */
+        $client = $this->httpClient->getContainer()->get(Client::class);
+
+        return $client;
+    }
+
+    protected function databaseName(): string
+    {
+        return (string) $this->httpClient->getContainer()->getParameter('database_name');
+    }
+
     protected function processEnrollmentQueue(int $messages = -1): void
     {
         try {
@@ -127,12 +141,23 @@ abstract class ApiTestCase extends WebTestCase
 
             $this->transport('async')->processOrFail();
         } catch (HandlerFailedException $exception) {
-            throw HandlerFailedExceptionUnwrapper::unwrap($exception);
+            throw $this->unwrapHandlerFailedException($exception);
         }
     }
 
     private function generateApiKey(): string
     {
         return bin2hex(random_bytes(32));
+    }
+
+    private function unwrapHandlerFailedException(HandlerFailedException $exception): Throwable
+    {
+        $current = $exception;
+
+        while ($current->getPrevious() !== null) {
+            $current = $current->getPrevious();
+        }
+
+        return $current;
     }
 }

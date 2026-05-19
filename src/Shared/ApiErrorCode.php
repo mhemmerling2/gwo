@@ -18,4 +18,5 @@ enum ApiErrorCode: string
     case FORBIDDEN = 'forbidden';
     case ENROLLMENT_NOT_FOUND = 'enrollment_not_found';
     case ENROLLMENT_REQUEST_NOT_FOUND = 'enrollment_request_not_found';
+    case ENROLLMENT_IN_PROGRESS = 'enrollment_in_progress';
 }

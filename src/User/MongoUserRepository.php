@@ -6,9 +6,12 @@ namespace Gwo\AppsRecruitmentTask\User;
 
 use Gwo\AppsRecruitmentTask\Security\ApiKeyEncoder;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use InvalidArgumentException;
 use MongoDB\Client;
 use MongoDB\Collection;
 use MongoDB\Model\BSONDocument;
+use Override;
+use RuntimeException;
 
 final class MongoUserRepository implements UserRepositoryInterface
 {
@@ -27,7 +30,7 @@ final class MongoUserRepository implements UserRepositoryInterface
         );
     }
 
-    #[\Override]
+    #[Override]
     public function save(User $user): void
     {
         $existingDocument = $this->collection->findOne(
@@ -46,7 +49,7 @@ final class MongoUserRepository implements UserRepositoryInterface
             : $existingApiKeyHash;
 
         if ($apiKeyHash === null) {
-            throw new \InvalidArgumentException('Cannot persist user without API key hash.');
+            throw new InvalidArgumentException('Cannot persist user without API key hash.');
         }
 
         $this->collection->replaceOne(
@@ -61,7 +64,7 @@ final class MongoUserRepository implements UserRepositoryInterface
         );
     }
 
-    #[\Override]
+    #[Override]
     public function getById(StringId $id): ?User
     {
         $document = $this->collection->findOne(['id' => (string) $id]);
@@ -73,7 +76,7 @@ final class MongoUserRepository implements UserRepositoryInterface
         return $this->mapDocumentToUser($document);
     }
 
-    #[\Override]
+    #[Override]
     public function getByApiKey(string $apiKey): ?User
     {
         $document = $this->collection->findOne([
@@ -94,7 +97,7 @@ final class MongoUserRepository implements UserRepositoryInterface
         $role = $document['role'] ?? null;
 
         if (!is_string($id) || !is_string($name) || !is_string($role)) {
-            throw new \RuntimeException('Invalid user document structure.');
+            throw new RuntimeException('Invalid user document structure.');
         }
 
         return new User(

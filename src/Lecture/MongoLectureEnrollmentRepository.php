@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DateTimeImmutable;
+use Gwo\AppsRecruitmentTask\Persistence\MongoStudentIds;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use MongoDB\Client;
 use MongoDB\Collection;
-use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
+use Override;
 
 final class MongoLectureEnrollmentRepository implements LectureEnrollmentRepositoryInterface
 {
@@ -21,12 +23,13 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
         $this->collection = $client->selectCollection($databaseName, self::COLLECTION_NAME);
     }
 
-    #[\Override]
+    #[Override]
     public function save(LectureEnrollment $enrollment): bool
     {
         $result = $this->collection->updateOne(
             [
                 'id' => (string) $enrollment->getLectureId(),
+                'startDate' => ['$gt' => (new DateTimeImmutable())->format(DATE_ATOM)],
                 'studentIds' => ['$ne' => (string) $enrollment->getStudentId()],
                 '$expr' => [
                     '$lt' => [
@@ -49,7 +52,7 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
         return $result->getModifiedCount() > 0;
     }
 
-    #[\Override]
+    #[Override]
     public function deleteByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         $result = $this->collection->updateOne(
@@ -67,7 +70,7 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
         return $result->getModifiedCount() > 0;
     }
 
-    #[\Override]
+    #[Override]
     public function existsByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
     {
         $document = $this->collection->findOne([
@@ -78,7 +81,7 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
         return $document instanceof BSONDocument;
     }
 
-    #[\Override]
+    #[Override]
     public function countByLecture(StringId $lectureId): int
     {
         $document = $this->collection->findOne(
@@ -90,13 +93,13 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
             return 0;
         }
 
-        return count($this->extractStudentIds($document));
+        return count(MongoStudentIds::fromDocument($document));
     }
 
     /**
      * @return list<StringId>
      */
-    #[\Override]
+    #[Override]
     public function getLectureIdsByStudent(StringId $studentId): array
     {
         $documents = $this->collection->find(
@@ -124,26 +127,5 @@ final class MongoLectureEnrollmentRepository implements LectureEnrollmentReposit
         }
 
         return $lectureIds;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function extractStudentIds(BSONDocument $document): array
-    {
-        $studentIds = $document['studentIds'] ?? [];
-
-        if ($studentIds instanceof BSONArray) {
-            $studentIds = $studentIds->getArrayCopy();
-        }
-
-        if (!is_array($studentIds)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            $studentIds,
-            static fn(mixed $studentId): bool => is_string($studentId),
-        ));
     }
 }

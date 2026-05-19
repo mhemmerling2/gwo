@@ -1,4 +1,4 @@
-FROM php:8.5-fpm-alpine
+FROM php:8.5-cli-alpine
 
 RUN apk update && apk add curl git zip unzip ngrep linux-headers ${PHPIZE_DEPS}
 
@@ -14,4 +14,4 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY ./ ./
 
-CMD ["php", "-S", "0.0.0.0:80", "-t", "public", "docker/php-server-router.php"]
+CMD ["php", "-S", "0.0.0.0:80", "-t", "public", "public/index.php"]

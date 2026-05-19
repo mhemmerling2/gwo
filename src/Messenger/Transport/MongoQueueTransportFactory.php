@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Messenger\Transport;
 
+use InvalidArgumentException;
 use MongoDB\Client;
+use Override;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
@@ -25,7 +27,7 @@ final readonly class MongoQueueTransportFactory implements TransportFactoryInter
     /**
      * @phpstan-param array<mixed> $options
      */
-    #[\Override]
+    #[Override]
     public function createTransport(string $dsn, array $options, SerializerInterface $serializer): TransportInterface
     {
         $parsedOptions = $this->parseDsn($dsn);
@@ -35,11 +37,11 @@ final readonly class MongoQueueTransportFactory implements TransportFactoryInter
         $claimTimeout = $options['claim_timeout'] ?? 300;
 
         if (!is_string($collection) || trim($collection) === '') {
-            throw new \InvalidArgumentException('Messenger collection name must be a non-empty string.');
+            throw new InvalidArgumentException('Messenger collection name must be a non-empty string.');
         }
 
         if (!is_string($queue) || trim($queue) === '') {
-            throw new \InvalidArgumentException('Messenger queue name must be a non-empty string.');
+            throw new InvalidArgumentException('Messenger queue name must be a non-empty string.');
         }
 
         if (is_string($claimTimeout) && is_numeric($claimTimeout)) {
@@ -47,7 +49,7 @@ final readonly class MongoQueueTransportFactory implements TransportFactoryInter
         }
 
         if (!is_int($claimTimeout) || $claimTimeout < 1) {
-            throw new \InvalidArgumentException('Messenger claim timeout must be a positive integer.');
+            throw new InvalidArgumentException('Messenger claim timeout must be a positive integer.');
         }
 
         return new MongoQueueTransport(
@@ -64,7 +66,7 @@ final readonly class MongoQueueTransportFactory implements TransportFactoryInter
     /**
      * @phpstan-param array<mixed> $options
      */
-    #[\Override]
+    #[Override]
     public function supports(string $dsn, array $options): bool
     {
         return str_starts_with($dsn, self::DSN_PREFIX);
@@ -78,7 +80,7 @@ final readonly class MongoQueueTransportFactory implements TransportFactoryInter
         $parts = parse_url($dsn);
 
         if ($parts === false) {
-            throw new \InvalidArgumentException(sprintf('Invalid messenger transport DSN: %s', $dsn));
+            throw new InvalidArgumentException(sprintf('Invalid messenger transport DSN: %s', $dsn));
         }
 
         $options = [];

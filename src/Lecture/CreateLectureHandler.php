@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
 use Gwo\AppsRecruitmentTask\Util\StringId;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler(bus: 'command.bus')]
 final readonly class CreateLectureHandler
 {
     public function __construct(
@@ -15,7 +13,7 @@ final readonly class CreateLectureHandler
     ) {
     }
 
-    public function handle(CreateLectureCommand $command): Lecture
+    public function __invoke(CreateLectureCommand $command): Lecture
     {
         if (trim($command->name) === '') {
             throw new InvalidLectureDataException('Lecture name cannot be empty.');
@@ -41,10 +39,5 @@ final readonly class CreateLectureHandler
         $this->lectureRepository->save($lecture);
 
         return $lecture;
-    }
-
-    public function __invoke(CreateLectureCommand $command): Lecture
-    {
-        return $this->handle($command);
     }
 }

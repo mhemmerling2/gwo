@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Tests\Lecture;
 
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
-use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\Tests\ApiTestCase;
 use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\Util\StringId;
@@ -40,7 +39,7 @@ final class LectureTest extends ApiTestCase
 
         /** @var LectureRepositoryInterface $lectureRepository */
         $lectureRepository = $this->httpClient->getContainer()->get(LectureRepositoryInterface::class);
-        $savedLecture = $lectureRepository->getById(new \Gwo\AppsRecruitmentTask\Util\StringId($payload['id']));
+        $savedLecture = $lectureRepository->getById(new StringId($payload['id']));
 
         self::assertNotNull($savedLecture);
         self::assertSame('Distributed Systems 101', $savedLecture->getName());
@@ -422,13 +421,7 @@ final class LectureTest extends ApiTestCase
         self::assertSame(Response::HTTP_ACCEPTED, $secondEnrollResponse->getStatusCode());
         $secondEnrollPayload = $this->decodeJsonResponse($secondEnrollResponse);
 
-        try {
-            $this->processEnrollmentQueue();
-            self::fail('Expected lecture full exception during queue processing.');
-        } catch (\Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException $exception) {
-            self::assertSame(ApiErrorCode::LECTURE_FULL, $exception->getErrorCode());
-            self::assertSame('Lecture student limit exceeded.', $exception->getMessage());
-        }
+        $this->processEnrollmentQueue();
 
         $failedStatusResponse = $this->makeRequest(
             'GET',
@@ -473,13 +466,7 @@ final class LectureTest extends ApiTestCase
         self::assertSame(Response::HTTP_ACCEPTED, $response->getStatusCode());
         $payload = $this->decodeJsonResponse($response);
 
-        try {
-            $this->processEnrollmentQueue();
-            self::fail('Expected lecture started exception during queue processing.');
-        } catch (\Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException $exception) {
-            self::assertSame(ApiErrorCode::LECTURE_STARTED, $exception->getErrorCode());
-            self::assertSame('Cannot enroll to a lecture that has already started.', $exception->getMessage());
-        }
+        $this->processEnrollmentQueue();
 
         $failedStatusResponse = $this->makeRequest(
             'GET',
@@ -514,23 +501,46 @@ final class LectureTest extends ApiTestCase
             [],
             $this->authHeaders($student),
         );
-        self::assertSame(Response::HTTP_ACCEPTED, $secondResponse->getStatusCode());
-        $secondPayload = $this->decodeJsonResponse($secondResponse);
 
-        try {
-            $this->processEnrollmentQueue();
-            self::fail('Expected already enrolled exception during queue processing.');
-        } catch (\Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException $exception) {
-            self::assertSame(ApiErrorCode::ALREADY_ENROLLED, $exception->getErrorCode());
-            self::assertSame('Student is already enrolled to this lecture.', $exception->getMessage());
-        }
-
-        $failedStatusResponse = $this->makeRequest(
-            'GET',
-            sprintf('/students/me/enrollment-requests/%s', $secondPayload['requestId']),
-            headers: $this->authHeaders($student),
+        $this->assertJsonErrorResponse(
+            $secondResponse,
+            Response::HTTP_CONFLICT,
+            'already_enrolled',
+            'Student is already enrolled to this lecture.',
         );
-        self::assertSame('already_enrolled', $this->decodeJsonResponse($failedStatusResponse)['failureCode']);
+    }
+
+    #[Test]
+    public function itRejectsConcurrentEnrollmentRequestsForSameLecture(): void
+    {
+        $lecturer = $this->createLecturer();
+        $student = $this->createStudent();
+        $this->persistUser($lecturer);
+        $this->persistUser($student);
+
+        $lecture = $this->createLecture($lecturer);
+
+        $firstResponse = $this->makeJsonRequest(
+            'POST',
+            sprintf('/lectures/%s/enrollments', $lecture['id']),
+            [],
+            $this->authHeaders($student),
+        );
+        self::assertSame(Response::HTTP_ACCEPTED, $firstResponse->getStatusCode());
+
+        $secondResponse = $this->makeJsonRequest(
+            'POST',
+            sprintf('/lectures/%s/enrollments', $lecture['id']),
+            [],
+            $this->authHeaders($student),
+        );
+
+        $this->assertJsonErrorResponse(
+            $secondResponse,
+            Response::HTTP_CONFLICT,
+            'enrollment_in_progress',
+            'An enrollment request for this lecture is already being processed.',
+        );
     }
 
     #[Test]
@@ -630,20 +640,14 @@ final class LectureTest extends ApiTestCase
 
         $response = $this->makeJsonRequest(
             'POST',
-            '/lectures/non-existing-lecture/enrollments',
+            '/lectures/00000000-0000-4000-8000-000000000099/enrollments',
             [],
             $this->authHeaders($student),
         );
         self::assertSame(Response::HTTP_ACCEPTED, $response->getStatusCode());
         $payload = $this->decodeJsonResponse($response);
 
-        try {
-            $this->processEnrollmentQueue();
-            self::fail('Expected lecture not found exception during queue processing.');
-        } catch (\Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException $exception) {
-            self::assertSame(ApiErrorCode::LECTURE_NOT_FOUND, $exception->getErrorCode());
-            self::assertSame('Lecture not found.', $exception->getMessage());
-        }
+        $this->processEnrollmentQueue();
 
         $failedStatusResponse = $this->makeRequest(
             'GET',

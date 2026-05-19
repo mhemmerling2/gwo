@@ -9,6 +9,7 @@ use MongoDB\Collection;
 use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use MongoDB\Operation\FindOneAndUpdate;
+use Override;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\LogicException;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
@@ -26,7 +27,7 @@ final readonly class MongoQueueTransport implements TransportInterface
     ) {
     }
 
-    #[\Override]
+    #[Override]
     public function send(Envelope $envelope): Envelope
     {
         $messageId = (string) StringId::new();
@@ -46,7 +47,7 @@ final readonly class MongoQueueTransport implements TransportInterface
         return $envelope->with(new TransportMessageIdStamp($messageId));
     }
 
-    #[\Override]
+    #[Override]
     public function get(): iterable
     {
         $now = $this->now();
@@ -94,13 +95,13 @@ final readonly class MongoQueueTransport implements TransportInterface
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function ack(Envelope $envelope): void
     {
         $this->deleteByTransportMessageId($envelope);
     }
 
-    #[\Override]
+    #[Override]
     public function reject(Envelope $envelope): void
     {
         $this->deleteByTransportMessageId($envelope);

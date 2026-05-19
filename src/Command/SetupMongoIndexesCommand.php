@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Command;
 
 use Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager;
+use Override;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,7 +23,7 @@ final class SetupMongoIndexesCommand extends Command
         parent::__construct();
     }
 
-    #[\Override]
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->mongoIndexManager->ensureIndexes();

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
 use Gwo\AppsRecruitmentTask\Util\StringId;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler(bus: 'command.bus')]
 final readonly class RemoveStudentFromLectureHandler
 {
     public function __construct(
@@ -16,7 +14,7 @@ final readonly class RemoveStudentFromLectureHandler
     ) {
     }
 
-    public function handle(StringId $lectureId, StringId $studentId, StringId $lecturerId): void
+    public function __invoke(StringId $lectureId, StringId $studentId, StringId $lecturerId): void
     {
         $lecture = $this->lectureRepository->getById($lectureId);
 
@@ -31,10 +29,5 @@ final readonly class RemoveStudentFromLectureHandler
         if (!$this->lectureEnrollmentRepository->deleteByLectureAndStudent($lectureId, $studentId)) {
             throw LectureEnrollmentException::enrollmentNotFound();
         }
-    }
-
-    public function __invoke(RemoveStudentFromLectureCommand $command): void
-    {
-        $this->handle($command->lectureId, $command->studentId, $command->lecturerId);
     }
 }

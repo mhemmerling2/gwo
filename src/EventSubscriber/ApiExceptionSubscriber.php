@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\EventSubscriber;
 
-use Gwo\AppsRecruitmentTask\Controller\CreateLectureController;
 use Gwo\AppsRecruitmentTask\Controller\Dto\ErrorResponseDto;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
+use InvalidArgumentException;
+use Override;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,12 +19,12 @@ use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Throwable;
 
-final class ApiRequestPayloadExceptionSubscriber implements EventSubscriberInterface
+final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
     private const INVALID_JSON_MESSAGE = 'Request body must contain valid JSON.';
     private const INVALID_REQUEST_MESSAGE = 'Request JSON must be an object.';
 
-    #[\Override]
+    #[Override]
     public static function getSubscribedEvents(): array
     {
         return [
@@ -33,13 +34,23 @@ final class ApiRequestPayloadExceptionSubscriber implements EventSubscriberInter
 
     public function onKernelException(ExceptionEvent $event): void
     {
-        $request = $event->getRequest();
-
-        if ($request->attributes->get('_route') !== CreateLectureController::ROUTE_NAME) {
+        if (!$this->isApiRequest($event)) {
             return;
         }
 
         $exception = $event->getThrowable();
+
+        if ($exception instanceof InvalidArgumentException) {
+            $event->setResponse(new JsonResponse(
+                data: new ErrorResponseDto(
+                    error: ApiErrorCode::INVALID_REQUEST,
+                    message: $exception->getMessage(),
+                ),
+                status: Response::HTTP_BAD_REQUEST,
+            ));
+
+            return;
+        }
 
         if (!$exception instanceof BadRequestHttpException) {
             return;
@@ -69,6 +80,25 @@ final class ApiRequestPayloadExceptionSubscriber implements EventSubscriberInter
                 status: Response::HTTP_BAD_REQUEST,
             ));
         }
+    }
+
+    private function isApiRequest(ExceptionEvent $event): bool
+    {
+        $request = $event->getRequest();
+        $path = $request->getPathInfo();
+
+        if (!str_starts_with($path, '/lectures') && !str_starts_with($path, '/students')) {
+            return false;
+        }
+
+        if ($request->getPreferredFormat() === 'json') {
+            return true;
+        }
+
+        $acceptHeader = $request->headers->get('Accept') ?? '';
+
+        return $acceptHeader === 'application/json'
+            || str_contains($acceptHeader, 'application/json');
     }
 
     /**

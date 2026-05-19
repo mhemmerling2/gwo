@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DateTimeImmutable;
+use Gwo\AppsRecruitmentTask\Persistence\MongoStudentIds;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use MongoDB\Client;
 use MongoDB\Collection;
-use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
+use Override;
 
 final class MongoLectureRepository implements LectureRepositoryInterface
 {
@@ -21,7 +23,7 @@ final class MongoLectureRepository implements LectureRepositoryInterface
         $this->collection = $client->selectCollection($databaseName, self::COLLECTION_NAME);
     }
 
-    #[\Override]
+    #[Override]
     public function save(Lecture $lecture): void
     {
         $existingDocument = $this->collection->findOne(
@@ -29,7 +31,7 @@ final class MongoLectureRepository implements LectureRepositoryInterface
             ['projection' => ['studentIds' => 1]],
         );
 
-        $studentIds = $this->extractStudentIds($existingDocument);
+        $studentIds = MongoStudentIds::fromDocument($existingDocument);
 
         $this->collection->replaceOne(
             ['id' => (string) $lecture->getId()],
@@ -39,14 +41,14 @@ final class MongoLectureRepository implements LectureRepositoryInterface
                 'name' => $lecture->getName(),
                 'studentLimit' => $lecture->getStudentLimit(),
                 'studentIds' => $studentIds,
-                'startDate' => $lecture->getStartDate()->format(\DATE_ATOM),
-                'endDate' => $lecture->getEndDate()->format(\DATE_ATOM),
+                'startDate' => $lecture->getStartDate()->format(DATE_ATOM),
+                'endDate' => $lecture->getEndDate()->format(DATE_ATOM),
             ],
             ['upsert' => true],
         );
     }
 
-    #[\Override]
+    #[Override]
     public function getById(StringId $id): ?Lecture
     {
         $document = $this->collection->findOne(['id' => (string) $id]);
@@ -62,7 +64,7 @@ final class MongoLectureRepository implements LectureRepositoryInterface
      * @param list<StringId> $ids
      * @return list<Lecture>
      */
-    #[\Override]
+    #[Override]
     public function getByIds(array $ids): array
     {
         if ($ids === []) {
@@ -134,33 +136,8 @@ final class MongoLectureRepository implements LectureRepositoryInterface
             lecturerId: new StringId(value: $lecturerId),
             name: $name,
             studentLimit: $studentLimit,
-            startDate: new \DateTimeImmutable(datetime: $startDate),
-            endDate: new \DateTimeImmutable(datetime: $endDate),
+            startDate: new DateTimeImmutable(datetime: $startDate),
+            endDate: new DateTimeImmutable(datetime: $endDate),
         );
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function extractStudentIds(mixed $document): array
-    {
-        if (!$document instanceof BSONDocument) {
-            return [];
-        }
-
-        $studentIds = $document['studentIds'] ?? [];
-
-        if ($studentIds instanceof BSONArray) {
-            $studentIds = $studentIds->getArrayCopy();
-        }
-
-        if (!is_array($studentIds)) {
-            return [];
-        }
-
-        return array_values(array_filter(
-            $studentIds,
-            static fn(mixed $studentId): bool => is_string($studentId),
-        ));
     }
 }

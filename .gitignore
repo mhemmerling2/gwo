@@ -3,3 +3,4 @@
 /var/
 /.idea/
 .DS_Store
+/config/reference.php

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
+use DomainException;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 
-final class LectureEnrollmentException extends \DomainException
+final class LectureEnrollmentException extends DomainException
 {
     private function __construct(
         string $message,

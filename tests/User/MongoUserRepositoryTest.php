@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests\User;
 
-use Gwo\AppsRecruitmentTask\Persistence\DatabaseClient;
 use Gwo\AppsRecruitmentTask\Tests\ApiTestCase;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,13 +16,13 @@ final class MongoUserRepositoryTest extends ApiTestCase
         $user = $this->createLecturer();
         $this->persistUser($user);
 
-        /** @var DatabaseClient $databaseClient */
-        $databaseClient = $this->httpClient->getContainer()->get(DatabaseClient::class);
-        $documents = $databaseClient->getByQuery('users', ['id' => (string) $user->getId()]);
+        $document = $this->mongoClient()
+            ->selectCollection($this->databaseName(), 'users')
+            ->findOne(['id' => (string) $user->getId()]);
 
-        self::assertCount(1, $documents);
-        self::assertArrayHasKey('apiKeyHash', $documents[0]);
-        self::assertArrayNotHasKey('apiKey', $documents[0]);
+        self::assertNotNull($document);
+        self::assertArrayHasKey('apiKeyHash', $document);
+        self::assertArrayNotHasKey('apiKey', $document);
 
         /** @var UserRepositoryInterface $userRepository */
         $userRepository = $this->httpClient->getContainer()->get(UserRepositoryInterface::class);

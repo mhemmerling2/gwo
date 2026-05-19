@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
+use JsonSerializable;
+use Override;
 
-final readonly class LectureListResponseDto implements \JsonSerializable
+final readonly class LectureListResponseDto implements JsonSerializable
 {
     /**
      * @param list<LectureResponseDto> $lectures
@@ -32,7 +34,7 @@ final readonly class LectureListResponseDto implements \JsonSerializable
     /**
      * @return list<LectureResponseDto>
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return $this->lectures;

@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
 use Gwo\AppsRecruitmentTask\Util\StringId;
-use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-#[AsMessageHandler(bus: 'query.bus')]
 final readonly class GetStudentLecturesHandler
 {
     public function __construct(
@@ -17,9 +15,9 @@ final readonly class GetStudentLecturesHandler
     }
 
     /**
-     * @return Lecture[]
+     * @return list<Lecture>
      */
-    public function handle(StringId $studentId): array
+    public function __invoke(StringId $studentId): array
     {
         $lectures = $this->lectureRepository->getByIds(
             $this->lectureEnrollmentRepository->getLectureIdsByStudent($studentId),
@@ -31,13 +29,5 @@ final readonly class GetStudentLecturesHandler
         );
 
         return $lectures;
-    }
-
-    /**
-     * @return Lecture[]
-     */
-    public function __invoke(GetStudentLecturesQuery $query): array
-    {
-        return $this->handle($query->studentId);
     }
 }

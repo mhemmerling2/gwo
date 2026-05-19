@@ -8,18 +8,6 @@
             "ref": "fdd756167454623e21f1d769c5b814b243782a67"
         }
     },
-    "facile-it/mongodb-bundle": {
-        "version": "2.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "main",
-            "version": "0.6",
-            "ref": "694215679ed64311cea9177b0de851a1fa0c7e74"
-        },
-        "files": [
-            "config/packages/facile_it_mongodb.yaml"
-        ]
-    },
     "phpstan/phpstan": {
         "version": "2.1",
         "recipe": {

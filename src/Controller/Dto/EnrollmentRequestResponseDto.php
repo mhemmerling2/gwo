@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
 use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequest;
+use JsonSerializable;
+use Override;
 
-final readonly class EnrollmentRequestResponseDto implements \JsonSerializable
+final readonly class EnrollmentRequestResponseDto implements JsonSerializable
 {
     public function __construct(
         private string $requestId,
@@ -28,9 +30,9 @@ final readonly class EnrollmentRequestResponseDto implements \JsonSerializable
             status: $request->getStatus()->value,
             lectureId: (string) $request->getLectureId(),
             studentId: (string) $request->getStudentId(),
-            createdAt: $request->getCreatedAt()->format(\DATE_ATOM),
-            updatedAt: $request->getUpdatedAt()->format(\DATE_ATOM),
-            processedAt: $request->getProcessedAt()?->format(\DATE_ATOM),
+            createdAt: $request->getCreatedAt()->format(DATE_ATOM),
+            updatedAt: $request->getUpdatedAt()->format(DATE_ATOM),
+            processedAt: $request->getProcessedAt()?->format(DATE_ATOM),
             failureCode: $request->getFailureCode()?->value,
             failureMessage: $request->getFailureMessage(),
         );
@@ -49,7 +51,7 @@ final readonly class EnrollmentRequestResponseDto implements \JsonSerializable
      *   failureMessage: string|null
      * }
      */
-    #[\Override]
+    #[Override]
     public function jsonSerialize(): array
     {
         return [

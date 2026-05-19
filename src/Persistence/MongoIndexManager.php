@@ -28,6 +28,17 @@ final readonly class MongoIndexManager
         $enrollmentRequests = $this->client->selectCollection($this->databaseName, 'enrollment_requests');
         $enrollmentRequests->createIndex(['id' => 1], ['unique' => true]);
         $enrollmentRequests->createIndex(['studentId' => 1, 'createdAt' => -1]);
+        $enrollmentRequests->createIndex(
+            ['lectureId' => 1, 'studentId' => 1],
+            [
+                'unique' => true,
+                'partialFilterExpression' => [
+                    'status' => [
+                        '$in' => ['queued', 'processing'],
+                    ],
+                ],
+            ],
+        );
 
         $messengerMessages = $this->client->selectCollection($this->databaseName, 'messenger_messages');
         $messengerMessages->createIndex(['queue' => 1, 'availableAt' => 1, 'claimedAt' => 1, 'createdAt' => 1]);

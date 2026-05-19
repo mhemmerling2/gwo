@@ -1,0 +1,4 @@
+security:
+    access_control:
+        - { path: ^/docs$, roles: ROLE_LECTURER }
+        - { path: ^/openapi\.yaml$, roles: ROLE_LECTURER }

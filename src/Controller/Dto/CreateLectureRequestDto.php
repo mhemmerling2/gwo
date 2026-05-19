@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Controller\Dto;
 
+use DateTimeImmutable;
+use Exception;
 use Gwo\AppsRecruitmentTask\Lecture\CreateLectureCommand;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use InvalidArgumentException;
 
 final readonly class CreateLectureRequestDto
 {
@@ -31,7 +34,7 @@ final readonly class CreateLectureRequestDto
     private static function requireString(mixed $value, string $field): string
     {
         if (!is_string($value)) {
-            throw new \InvalidArgumentException(sprintf('Field "%s" must be a string.', $field));
+            throw new InvalidArgumentException(sprintf('Field "%s" must be a string.', $field));
         }
 
         return $value;
@@ -40,22 +43,22 @@ final readonly class CreateLectureRequestDto
     private static function requireInt(mixed $value, string $field): int
     {
         if (!is_int($value)) {
-            throw new \InvalidArgumentException(sprintf('Field "%s" must be an integer.', $field));
+            throw new InvalidArgumentException(sprintf('Field "%s" must be an integer.', $field));
         }
 
         return $value;
     }
 
-    private static function requireDate(mixed $value, string $field): \DateTimeImmutable
+    private static function requireDate(mixed $value, string $field): DateTimeImmutable
     {
         if (!is_string($value)) {
-            throw new \InvalidArgumentException(sprintf('Field "%s" must be a valid datetime string.', $field));
+            throw new InvalidArgumentException(sprintf('Field "%s" must be a valid datetime string.', $field));
         }
 
         try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
-            throw new \InvalidArgumentException(sprintf('Field "%s" must be a valid datetime string.', $field));
+            return new DateTimeImmutable($value);
+        } catch (Exception) {
+            throw new InvalidArgumentException(sprintf('Field "%s" must be a valid datetime string.', $field));
         }
     }
 }

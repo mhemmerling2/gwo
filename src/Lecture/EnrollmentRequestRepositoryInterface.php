@@ -18,4 +18,6 @@ interface EnrollmentRequestRepositoryInterface
     public function markFailed(StringId $requestId, ApiErrorCode $failureCode, string $failureMessage): void;
 
     public function getByIdForStudent(StringId $requestId, StringId $studentId): ?EnrollmentRequest;
+
+    public function hasActiveForStudentAndLecture(StringId $lectureId, StringId $studentId): bool;
 }

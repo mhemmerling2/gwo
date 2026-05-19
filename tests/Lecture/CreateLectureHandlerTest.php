@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests\Lecture;
 
+use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Lecture\CreateLectureCommand;
 use Gwo\AppsRecruitmentTask\Lecture\CreateLectureHandler;
 use Gwo\AppsRecruitmentTask\Lecture\InvalidLectureDataException;
@@ -22,20 +23,20 @@ final class CreateLectureHandlerTest extends TestCase
         $repository = new InMemoryLectureRepository();
         $handler = new CreateLectureHandler($repository);
 
-        $lecture = $handler->handle(new CreateLectureCommand(
+        $lecture = $handler(new CreateLectureCommand(
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 30,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T10:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T12:00:00+02:00'),
         ));
 
         self::assertSame($lecture, $repository->savedLecture);
         self::assertSame('Architecture Basics', $lecture->getName());
         self::assertSame(30, $lecture->getStudentLimit());
         self::assertTrue($lecture->getLecturerId()->equals(new StringId('lecturer-1')));
-        self::assertSame('2026-06-01T10:00:00+02:00', $lecture->getStartDate()->format(\DATE_ATOM));
-        self::assertSame('2026-06-01T12:00:00+02:00', $lecture->getEndDate()->format(\DATE_ATOM));
+        self::assertSame('2026-06-01T10:00:00+02:00', $lecture->getStartDate()->format(DATE_ATOM));
+        self::assertSame('2026-06-01T12:00:00+02:00', $lecture->getEndDate()->format(DATE_ATOM));
     }
 
     #[Test]
@@ -46,12 +47,12 @@ final class CreateLectureHandlerTest extends TestCase
         $this->expectException(InvalidLectureDataException::class);
         $this->expectExceptionMessage('Lecture name cannot be empty.');
 
-        $handler->handle(new CreateLectureCommand(
+        $handler(new CreateLectureCommand(
             lecturerId: new StringId('lecturer-1'),
             name: '   ',
             studentLimit: 30,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T10:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T12:00:00+02:00'),
         ));
     }
 
@@ -64,12 +65,12 @@ final class CreateLectureHandlerTest extends TestCase
         $this->expectException(InvalidLectureDataException::class);
         $this->expectExceptionMessage('Student limit must be greater than 0.');
 
-        $handler->handle(new CreateLectureCommand(
+        $handler(new CreateLectureCommand(
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: $studentLimit,
-            startDate: new \DateTimeImmutable('2026-06-01T10:00:00+02:00'),
-            endDate: new \DateTimeImmutable('2026-06-01T12:00:00+02:00'),
+            startDate: new DateTimeImmutable('2026-06-01T10:00:00+02:00'),
+            endDate: new DateTimeImmutable('2026-06-01T12:00:00+02:00'),
         ));
     }
 
@@ -82,12 +83,12 @@ final class CreateLectureHandlerTest extends TestCase
         $this->expectException(InvalidLectureDataException::class);
         $this->expectExceptionMessage('Lecture end date must be later than start date.');
 
-        $handler->handle(new CreateLectureCommand(
+        $handler(new CreateLectureCommand(
             lecturerId: new StringId('lecturer-1'),
             name: 'Architecture Basics',
             studentLimit: 30,
-            startDate: new \DateTimeImmutable($startDate),
-            endDate: new \DateTimeImmutable($endDate),
+            startDate: new DateTimeImmutable($startDate),
+            endDate: new DateTimeImmutable($endDate),
         ));
     }
 

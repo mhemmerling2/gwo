@@ -6,6 +6,7 @@ namespace Gwo\AppsRecruitmentTask\Security;
 
 use Gwo\AppsRecruitmentTask\Controller\Dto\ErrorResponseDto;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
+use Override;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +17,7 @@ final class ApiAccessDeniedHandler implements AccessDeniedHandlerInterface
 {
     private const MESSAGE = 'Access denied. Insufficient permissions.';
 
-    #[\Override]
+    #[Override]
     public function handle(Request $request, AccessDeniedException $accessDeniedException): Response
     {
         return new JsonResponse(

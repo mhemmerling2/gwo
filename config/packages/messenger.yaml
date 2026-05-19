@@ -1,25 +1,20 @@
 framework:
     messenger:
-        default_bus: command.bus
         failure_transport: failed
+        serializer:
+            symfony_serializer:
+                format: json
+                context: []
 
         transports:
-            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 0
             failed: 'mongoqueue://failed?collection=messenger_messages_failed'
 
         routing:
             Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureCommand: async
-
-        buses:
-            command.bus:
-                default_middleware: false
-                middleware:
-                    - send_message
-                    - handle_message
-            query.bus:
-                default_middleware: false
-                middleware:
-                    - handle_message
 
 when@test:
     framework:
