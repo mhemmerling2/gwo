@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build app and install dependencies
+        run: make bootstrap
+
+      - name: Run QA
+        run: make qa
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v

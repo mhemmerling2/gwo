@@ -1,0 +1,292 @@
+openapi: 3.1.0
+info:
+  title: GWO Apps Recruitment API
+  version: 1.0.0
+  description: API for lecture creation and student enrollments.
+servers:
+  - url: http://localhost:10990
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: Lectures
+  - name: Enrollments
+  - name: Students
+paths:
+  /lectures:
+    post:
+      tags: [Lectures]
+      summary: Create a new lecture
+      description: Available only for users with lecturer role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLectureRequest'
+      responses:
+        '201':
+          description: Lecture created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lecture'
+        '400':
+          description: Validation or request parsing error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated user has no lecturer role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /lectures/{lectureId}/enrollments:
+    post:
+      tags: [Enrollments]
+      summary: Queue enrollment of current student to lecture
+      description: Available only for users with student role. The request is accepted synchronously and processed asynchronously by Messenger.
+      parameters:
+        - $ref: '#/components/parameters/LectureId'
+      responses:
+        '202':
+          description: Enrollment request queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuedEnrollment'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated user has no student role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /students/me/enrollment-requests/{requestId}:
+    get:
+      tags: [Enrollments]
+      summary: Get current student's enrollment request status
+      description: Returns the current async enrollment request status for the authenticated student.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Enrollment request status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRequest'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated user has no student role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Enrollment request not found for current student
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /lectures/{lectureId}/enrollments/{studentId}:
+    delete:
+      tags: [Enrollments]
+      summary: Remove student from lecture
+      description: Available only for lecturer, and only on lecturer's own lecture.
+      parameters:
+        - $ref: '#/components/parameters/LectureId'
+        - $ref: '#/components/parameters/StudentId'
+      responses:
+        '204':
+          description: Enrollment removed
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden for this lecture
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Lecture or enrollment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /students/me/lectures:
+    get:
+      tags: [Students]
+      summary: List current student enrolled lectures
+      description: Available only for users with student role.
+      responses:
+        '200':
+          description: Lectures list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lecture'
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated user has no student role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+  parameters:
+    LectureId:
+      name: lectureId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 4df27c7e-f7d4-4f5b-9c10-1d3fd887611a
+    StudentId:
+      name: studentId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 3b911cea-77c6-4f06-989b-3d8f9df08efb
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: 1f0cc4da-d92b-4f4c-a048-f95d12f6f7f2
+  schemas:
+    CreateLectureRequest:
+      type: object
+      required: [name, studentLimit, startDate, endDate]
+      properties:
+        name:
+          type: string
+          example: Distributed Systems 101
+        studentLimit:
+          type: integer
+          minimum: 1
+          example: 25
+        startDate:
+          type: string
+          format: date-time
+          example: '2026-06-01T10:00:00+02:00'
+        endDate:
+          type: string
+          format: date-time
+          example: '2026-06-01T12:00:00+02:00'
+    Lecture:
+      type: object
+      required: [id, lecturerId, name, studentLimit, startDate, endDate]
+      properties:
+        id:
+          type: string
+        lecturerId:
+          type: string
+        name:
+          type: string
+        studentLimit:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+    QueuedEnrollment:
+      type: object
+      required: [requestId, status, lectureId, studentId]
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum: [queued]
+        lectureId:
+          type: string
+        studentId:
+          type: string
+    EnrollmentRequest:
+      type: object
+      required: [requestId, status, lectureId, studentId, createdAt, updatedAt, processedAt, failureCode, failureMessage]
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        lectureId:
+          type: string
+        studentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        failureCode:
+          type: string
+          nullable: true
+        failureMessage:
+          type: string
+          nullable: true
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          enum:
+            - unauthorized
+            - invalid_json
+            - invalid_request
+            - invalid_lecture_data
+            - lecture_not_found
+            - lecture_started
+            - already_enrolled
+            - lecture_full
+            - forbidden
+            - enrollment_not_found
+            - enrollment_error
+            - enrollment_request_not_found
+        message:
+          type: string

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- https://phpunit.de/manual/current/en/appendixes.configuration.html -->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd" colors="true" bootstrap="tests/bootstrap.php" stderr="true" cacheDirectory=".phpunit.cache">
+  <php>
+    <ini name="error_reporting" value="-1"/>
+    <!-- ###+ symfony/framework-bundle ### -->
+    <env name="APP_ENV" value="test"/>
+    <env name="APP_DEBUG" value="0"/>
+    <env name="APP_SECRET" value="1af20bdd374e5a7e4c1317deb60d333b"/>
+    <env name="KERNEL_CLASS" value="Gwo\AppsRecruitmentTask\Kernel"/>
+    <!-- ###- symfony/framework-bundle ### -->
+    <!-- ###+ nelmio/cors-bundle ### -->
+    <env name="CORS_ALLOW_ORIGIN" value="'^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'"/>
+    <!-- ###- nelmio/cors-bundle ### -->
+
+        <!-- ###+ facile-it/mongodb-bundle ### -->
+        <env name="MONGODB_HOST" value="localhost"/>
+        <env name="MONGODB_PORT" value="27017"/>
+        <env name="MONGODB_USER" value=""/>
+        <env name="MONGODB_PASSWORD" value=""/>
+        <env name="MONGODB_DB" value="symfony"/>
+        <!-- ###- facile-it/mongodb-bundle ### -->
+
+        <!-- ###+ symfony/messenger ### -->
+        <env name="MESSENGER_TRANSPORT_DSN" value="mongoqueue://enrollments?collection=messenger_messages&amp;claim_timeout=300"/>
+        <!-- ###- symfony/messenger ### -->
+  </php>
+  <testsuites>
+    <testsuite name="Apps Recruitment Task">
+      <directory>./tests/</directory>
+    </testsuite>
+  </testsuites>
+  <coverage/>
+  <source>
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+    <exclude>
+      <file>src/Kernel.php</file>
+    </exclude>
+  </source>
+</phpunit>

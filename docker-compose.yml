@@ -1,0 +1,21 @@
+services:
+  app:
+    build: ./
+    container_name: apps-recruitment-task
+    volumes:
+      - .:/app:rw
+    ports:
+      - 0.0.0.0:10990:80/tcp
+    depends_on:
+      - database
+
+  database:
+    image: docker.io/library/mongo:8.0.23
+    container_name: apps-recruitment-task-database
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - 27019:27017
+
+volumes:
+  mongodb:

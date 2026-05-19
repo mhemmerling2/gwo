@@ -1,0 +1,28 @@
+security:
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+
+        main:
+            stateless: true
+            lazy: true
+            entry_point: Gwo\AppsRecruitmentTask\Security\HeaderUserAuthenticator
+            access_denied_handler: Gwo\AppsRecruitmentTask\Security\ApiAccessDeniedHandler
+            custom_authenticators:
+                - Gwo\AppsRecruitmentTask\Security\HeaderUserAuthenticator
+
+    access_control:
+        - { path: ^/lectures$, methods: [POST], roles: ROLE_LECTURER }
+        - { path: ^/lectures/[^/]+/enrollments$, methods: [POST], roles: ROLE_STUDENT }
+        - { path: ^/lectures/[^/]+/enrollments/[^/]+$, methods: [DELETE], roles: ROLE_LECTURER }
+        - { path: ^/students/me/enrollment-requests/[^/]+$, methods: [GET], roles: ROLE_STUDENT }
+        - { path: ^/students/me/lectures$, methods: [GET], roles: ROLE_STUDENT }
+when@test:
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10
