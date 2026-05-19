@@ -1,6 +1,7 @@
 /vendor/
 /.phpunit.cache/
 /var/
-/.idea/
+/.idea/*
+!/.idea/php.xml
 .DS_Store
 /config/reference.php
