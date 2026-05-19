@@ -34,17 +34,19 @@ final class SeedDemoUsersCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+        $lecturerApiKey = $this->generateApiKey();
+        $studentApiKey = $this->generateApiKey();
 
         $lecturer = new User(
             id: new StringId(self::DEMO_LECTURER_ID),
             name: 'Demo Lecturer',
-            apiKey: $this->generateApiKey(),
+            apiKey: $lecturerApiKey,
             role: UserRole::LECTURER,
         );
         $student = new User(
             id: new StringId(self::DEMO_STUDENT_ID),
             name: 'Demo Student',
-            apiKey: $this->generateApiKey(),
+            apiKey: $studentApiKey,
             role: UserRole::STUDENT,
         );
 
@@ -59,21 +61,21 @@ final class SeedDemoUsersCommand extends Command
                     $lecturer->getRole()->value,
                     (string) $lecturer->getId(),
                     $lecturer->getName(),
-                    $lecturer->getApiKey(),
+                    $lecturerApiKey,
                 ],
                 [
                     $student->getRole()->value,
                     (string) $student->getId(),
                     $student->getName(),
-                    $student->getApiKey(),
+                    $studentApiKey,
                 ],
             ],
         );
         $io->section('Shell-friendly values');
         $io->writeln(sprintf('DEMO_LECTURER_ID=%s', (string) $lecturer->getId()));
-        $io->writeln(sprintf('DEMO_LECTURER_API_KEY=%s', $lecturer->getApiKey()));
+        $io->writeln(sprintf('DEMO_LECTURER_API_KEY=%s', $lecturerApiKey));
         $io->writeln(sprintf('DEMO_STUDENT_ID=%s', (string) $student->getId()));
-        $io->writeln(sprintf('DEMO_STUDENT_API_KEY=%s', $student->getApiKey()));
+        $io->writeln(sprintf('DEMO_STUDENT_API_KEY=%s', $studentApiKey));
         $io->writeln('Use the values with the X-Api-Key request header.');
 
         return Command::SUCCESS;

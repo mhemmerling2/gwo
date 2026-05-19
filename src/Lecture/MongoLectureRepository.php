@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Gwo\AppsRecruitmentTask\Lecture;
 
 use DateTimeImmutable;
-use Gwo\AppsRecruitmentTask\Persistence\MongoStudentIds;
+use Exception;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Client;
 use MongoDB\Collection;
+use MongoDB\Model\BSONArray;
 use MongoDB\Model\BSONDocument;
 use Override;
 
@@ -31,7 +33,7 @@ final class MongoLectureRepository implements LectureRepositoryInterface
             ['projection' => ['studentIds' => 1]],
         );
 
-        $studentIds = MongoStudentIds::fromDocument($existingDocument);
+        $studentIds = $this->extractStudentIds($existingDocument);
 
         $this->collection->replaceOne(
             ['id' => (string) $lecture->getId()],
@@ -41,8 +43,8 @@ final class MongoLectureRepository implements LectureRepositoryInterface
                 'name' => $lecture->getName(),
                 'studentLimit' => $lecture->getStudentLimit(),
                 'studentIds' => $studentIds,
-                'startDate' => $lecture->getStartDate()->format(DATE_ATOM),
-                'endDate' => $lecture->getEndDate()->format(DATE_ATOM),
+                'startDate' => new UTCDateTime($lecture->getStartDate()),
+                'endDate' => new UTCDateTime($lecture->getEndDate()),
             ],
             ['upsert' => true],
         );
@@ -120,13 +122,16 @@ final class MongoLectureRepository implements LectureRepositoryInterface
         $startDate = $document['startDate'] ?? null;
         $endDate = $document['endDate'] ?? null;
 
+        $startDateValue = $this->toDateTimeImmutable($startDate);
+        $endDateValue = $this->toDateTimeImmutable($endDate);
+
         if (
             !is_string($lectureId) ||
             !is_string($lecturerId) ||
             !is_string($name) ||
             !is_int($studentLimit) ||
-            !is_string($startDate) ||
-            !is_string($endDate)
+            $startDateValue === null ||
+            $endDateValue === null
         ) {
             return null;
         }
@@ -136,8 +141,50 @@ final class MongoLectureRepository implements LectureRepositoryInterface
             lecturerId: new StringId(value: $lecturerId),
             name: $name,
             studentLimit: $studentLimit,
-            startDate: new DateTimeImmutable(datetime: $startDate),
-            endDate: new DateTimeImmutable(datetime: $endDate),
+            startDate: $startDateValue,
+            endDate: $endDateValue,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractStudentIds(mixed $document): array
+    {
+        if (!$document instanceof BSONDocument) {
+            return [];
+        }
+
+        $studentIds = $document['studentIds'] ?? [];
+
+        if ($studentIds instanceof BSONArray) {
+            $studentIds = $studentIds->getArrayCopy();
+        }
+
+        if (!is_array($studentIds)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $studentIds,
+            static fn(mixed $studentId): bool => is_string($studentId),
+        ));
+    }
+
+    private function toDateTimeImmutable(mixed $value): ?DateTimeImmutable
+    {
+        if ($value instanceof UTCDateTime) {
+            return DateTimeImmutable::createFromMutable($value->toDateTime());
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($value);
+        } catch (Exception) {
+            return null;
+        }
     }
 }

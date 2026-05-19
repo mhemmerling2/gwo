@@ -16,6 +16,7 @@ use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
 use Symfony\Component\Messenger\Transport\Serialization\SerializerInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
+use Throwable;
 
 final readonly class MongoQueueTransport implements TransportInterface
 {
@@ -71,28 +72,7 @@ final readonly class MongoQueueTransport implements TransportInterface
             return [];
         }
 
-        $messageId = $document['_id'] ?? null;
-        $body = $document['body'] ?? null;
-        $headers = $document['headers'] ?? [];
-
-        if ($headers instanceof BSONDocument) {
-            $headers = $headers->getArrayCopy();
-        }
-
-        if ($headers instanceof BSONArray) {
-            $headers = $headers->getArrayCopy();
-        }
-
-        if (!is_string($messageId) || !is_string($body) || !is_array($headers)) {
-            return [];
-        }
-
-        return [
-            $this->serializer->decode([
-                'body' => $body,
-                'headers' => $this->normalizeHeaders($headers),
-            ])->with(new TransportMessageIdStamp($messageId)),
-        ];
+        return [$this->decodeEnvelope($document)];
     }
 
     #[Override]
@@ -134,10 +114,54 @@ final readonly class MongoQueueTransport implements TransportInterface
             throw new LogicException('No TransportMessageIdStamp found on the Envelope.');
         }
 
+        $messageId = $messageIdStamp->getId();
+
+        if (!is_string($messageId) || $messageId === '') {
+            throw new LogicException('Transport message id must be a non-empty string.');
+        }
+
+        $this->deleteRawMessage($messageId);
+    }
+
+    private function decodeEnvelope(BSONDocument $document): Envelope
+    {
+        $messageId = $document['_id'] ?? null;
+        $body = $document['body'] ?? null;
+        $headers = $document['headers'] ?? [];
+
+        if ($headers instanceof BSONDocument || $headers instanceof BSONArray) {
+            $headers = $headers->getArrayCopy();
+        }
+
+        if (!is_string($messageId) || !is_string($body) || !is_array($headers)) {
+            $this->discardInvalidMessage($messageId, 'Queue document has invalid structure.');
+        }
+
+        try {
+            return $this->serializer->decode([
+                'body' => $body,
+                'headers' => $this->normalizeHeaders($headers),
+            ])->with(new TransportMessageIdStamp($messageId));
+        } catch (Throwable $exception) {
+            $this->discardInvalidMessage($messageId, 'Queue document could not be decoded.', $exception);
+        }
+    }
+
+    private function deleteRawMessage(string $messageId): void
+    {
         $this->collection->deleteOne([
-            '_id' => $messageIdStamp->getId(),
+            '_id' => $messageId,
             'queue' => $this->queue,
         ]);
+    }
+
+    private function discardInvalidMessage(mixed $messageId, string $reason, ?Throwable $previous = null): never
+    {
+        if (is_string($messageId)) {
+            $this->deleteRawMessage($messageId);
+        }
+
+        throw new LogicException($reason, previous: $previous);
     }
 
     private function availableAt(Envelope $envelope, int $now): int

@@ -16,7 +16,7 @@ final readonly class EnrollStudentToLectureHandler
 {
     public function __construct(
         private LectureRepositoryInterface $lectureRepository,
-        private LectureEnrollmentRepositoryInterface $lectureEnrollmentRepository,
+        private LectureParticipantRepositoryInterface $lectureParticipantRepository,
         private EnrollmentRequestRepositoryInterface $enrollmentRequestRepository,
     ) {
     }
@@ -84,16 +84,11 @@ final readonly class EnrollStudentToLectureHandler
             throw LectureEnrollmentException::lectureStarted();
         }
 
-        $enrollment = new LectureEnrollment(
-            lectureId: $lectureId,
-            studentId: $studentId,
-        );
-
-        if ($this->lectureEnrollmentRepository->save($enrollment)) {
+        if ($this->lectureParticipantRepository->enroll($lectureId, $studentId)) {
             return;
         }
 
-        if ($this->lectureEnrollmentRepository->existsByLectureAndStudent($lectureId, $studentId)) {
+        if ($this->lectureParticipantRepository->isStudentEnrolled($lectureId, $studentId)) {
             if ($requestId !== null) {
                 return;
             }
@@ -101,7 +96,7 @@ final readonly class EnrollStudentToLectureHandler
             throw LectureEnrollmentException::alreadyEnrolled();
         }
 
-        if ($this->lectureEnrollmentRepository->countByLecture($lectureId) >= $lecture->getStudentLimit()) {
+        if ($this->lectureParticipantRepository->countStudents($lectureId) >= $lecture->getStudentLimit()) {
             throw LectureEnrollmentException::lectureFull();
         }
 

@@ -11,9 +11,8 @@ use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestStatus;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureCommand;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureHandler;
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
-use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollment;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException;
-use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface;
+use Gwo\AppsRecruitmentTask\Lecture\LectureParticipantRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\Util\StringId;
@@ -37,7 +36,7 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
-        $enrollmentRepository = new InMemoryEnrollmentRepository();
+        $enrollmentRepository = new InMemoryParticipantRepository();
         $handler = new EnrollStudentToLectureHandler(
             $lectureRepository,
             $enrollmentRepository,
@@ -49,8 +48,8 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             studentId: new StringId('student-1'),
         ));
 
-        self::assertTrue($enrollmentRepository->existsByLectureAndStudent(new StringId('lecture-1'), new StringId('student-1')));
-        self::assertSame(1, $enrollmentRepository->countByLecture(new StringId('lecture-1')));
+        self::assertTrue($enrollmentRepository->isStudentEnrolled(new StringId('lecture-1'), new StringId('student-1')));
+        self::assertSame(1, $enrollmentRepository->countStudents(new StringId('lecture-1')));
     }
 
     #[Test]
@@ -68,7 +67,7 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
         );
         $handler = new EnrollStudentToLectureHandler(
             new InMemoryEnrollmentLectureRepository($lecture),
-            new InMemoryEnrollmentRepository(),
+            new InMemoryParticipantRepository(),
             new InMemoryEnrollmentRequestRepository(),
         );
 
@@ -95,11 +94,8 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
-        $enrollmentRepository = new InMemoryEnrollmentRepository();
-        $enrollmentRepository->save(new LectureEnrollment(
-            lectureId: new StringId('lecture-1'),
-            studentId: new StringId('student-1'),
-        ));
+        $enrollmentRepository = new InMemoryParticipantRepository();
+        $enrollmentRepository->enroll(new StringId('lecture-1'), new StringId('student-1'));
         $handler = new EnrollStudentToLectureHandler(
             $lectureRepository,
             $enrollmentRepository,
@@ -134,9 +130,9 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             endDate: $endDate,
         );
         $lectureRepository = new InMemoryEnrollmentLectureRepository($lecture);
-        $enrollmentRepository = new InMemoryEnrollmentRepository(
-            saveResult: false,
-            countByLecture: 1,
+        $enrollmentRepository = new InMemoryParticipantRepository(
+            enrollResult: false,
+            countStudents: 1,
         );
         $handler = new EnrollStudentToLectureHandler(
             $lectureRepository,
@@ -171,11 +167,8 @@ final class EnrollStudentToLectureHandlerTest extends TestCase
             startDate: $startDate,
             endDate: $endDate,
         );
-        $enrollmentRepository = new InMemoryEnrollmentRepository();
-        $enrollmentRepository->save(new LectureEnrollment(
-            lectureId: new StringId('lecture-1'),
-            studentId: new StringId('student-1'),
-        ));
+        $enrollmentRepository = new InMemoryParticipantRepository();
+        $enrollmentRepository->enroll(new StringId('lecture-1'), new StringId('student-1'));
         $requestRepository = new TrackingEnrollmentRequestRepository();
         $handler = new EnrollStudentToLectureHandler(
             new InMemoryEnrollmentLectureRepository($lecture),
@@ -236,72 +229,60 @@ final class InMemoryEnrollmentLectureRepository implements LectureRepositoryInte
     }
 }
 
-final class InMemoryEnrollmentRepository implements LectureEnrollmentRepositoryInterface
+final class InMemoryParticipantRepository implements LectureParticipantRepositoryInterface
 {
-    /** @var list<LectureEnrollment> */
-    private array $enrollments = [];
+    /** @var array<string, array<string, true>> */
+    private array $enrollmentsByLecture = [];
 
     public function __construct(
-        private readonly bool $saveResult = true,
-        private readonly int $countByLecture = -1,
+        private readonly bool $enrollResult = true,
+        private readonly int $countStudents = -1,
     ) {
     }
 
     #[Override]
-    public function save(LectureEnrollment $enrollment): bool
+    public function enroll(StringId $lectureId, StringId $studentId): bool
     {
-        if (!$this->saveResult) {
+        if (!$this->enrollResult) {
             return false;
         }
 
-        if ($this->existsByLectureAndStudent($enrollment->getLectureId(), $enrollment->getStudentId())) {
+        if ($this->isStudentEnrolled($lectureId, $studentId)) {
             return false;
         }
 
-        $this->enrollments[] = $enrollment;
+        $this->enrollmentsByLecture[(string) $lectureId][(string) $studentId] = true;
 
         return true;
     }
 
     #[Override]
-    public function deleteByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
+    public function removeStudent(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
     #[Override]
-    public function existsByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
+    public function isStudentEnrolled(StringId $lectureId, StringId $studentId): bool
     {
-        foreach ($this->enrollments as $enrollment) {
-            if (
-                $enrollment->getLectureId()->equals($lectureId)
-                && $enrollment->getStudentId()->equals($studentId)
-            ) {
-                return true;
-            }
-        }
-
-        return false;
+        return isset($this->enrollmentsByLecture[(string) $lectureId][(string) $studentId]);
     }
 
     #[Override]
-    public function countByLecture(StringId $lectureId): int
+    public function countStudents(StringId $lectureId): int
     {
-        if ($this->countByLecture >= 0) {
-            return $this->countByLecture;
+        if ($this->countStudents >= 0) {
+            return $this->countStudents;
         }
 
-        return count(array_filter(
-            $this->enrollments,
-            static fn(LectureEnrollment $enrollment): bool => $enrollment->getLectureId()->equals($lectureId),
-        ));
+        return count($this->enrollmentsByLecture[(string) $lectureId] ?? []);
     }
 
     /**
      * @return list<StringId>
      */
     #[Override]
-    public function getLectureIdsByStudent(StringId $studentId): array
+    public function findLectureIdsByStudent(StringId $studentId): array
     {
         return [];
     }

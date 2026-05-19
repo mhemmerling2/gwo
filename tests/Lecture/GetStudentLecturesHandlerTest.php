@@ -7,8 +7,7 @@ namespace Gwo\AppsRecruitmentTask\Tests\Lecture;
 use DateTimeImmutable;
 use Gwo\AppsRecruitmentTask\Lecture\GetStudentLecturesHandler;
 use Gwo\AppsRecruitmentTask\Lecture\Lecture;
-use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollment;
-use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface;
+use Gwo\AppsRecruitmentTask\Lecture\LectureParticipantRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use Override;
@@ -50,7 +49,7 @@ final class GetStudentLecturesHandlerTest extends TestCase
             $earliest,
             $middle,
         ]);
-        $enrollmentRepository = new BulkEnrollmentRepository([
+        $enrollmentRepository = new BulkParticipantRepository([
             new StringId('lecture-2'),
             new StringId('lecture-3'),
             new StringId('lecture-1'),
@@ -123,7 +122,7 @@ final class BulkLectureRepository implements LectureRepositoryInterface
     }
 }
 
-final readonly class BulkEnrollmentRepository implements LectureEnrollmentRepositoryInterface
+final readonly class BulkParticipantRepository implements LectureParticipantRepositoryInterface
 {
     /**
      * @param list<StringId> $lectureIds
@@ -134,25 +133,25 @@ final readonly class BulkEnrollmentRepository implements LectureEnrollmentReposi
     }
 
     #[Override]
-    public function save(LectureEnrollment $enrollment): bool
+    public function enroll(StringId $lectureId, StringId $studentId): bool
     {
         return true;
     }
 
     #[Override]
-    public function deleteByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
+    public function removeStudent(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
     #[Override]
-    public function existsByLectureAndStudent(StringId $lectureId, StringId $studentId): bool
+    public function isStudentEnrolled(StringId $lectureId, StringId $studentId): bool
     {
         return false;
     }
 
     #[Override]
-    public function countByLecture(StringId $lectureId): int
+    public function countStudents(StringId $lectureId): int
     {
         return 0;
     }
@@ -161,7 +160,7 @@ final readonly class BulkEnrollmentRepository implements LectureEnrollmentReposi
      * @return list<StringId>
      */
     #[Override]
-    public function getLectureIdsByStudent(StringId $studentId): array
+    public function findLectureIdsByStudent(StringId $studentId): array
     {
         return $this->lectureIds;
     }

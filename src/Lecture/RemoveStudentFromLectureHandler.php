@@ -10,7 +10,7 @@ final readonly class RemoveStudentFromLectureHandler
 {
     public function __construct(
         private LectureRepositoryInterface $lectureRepository,
-        private LectureEnrollmentRepositoryInterface $lectureEnrollmentRepository,
+        private LectureParticipantRepositoryInterface $lectureParticipantRepository,
     ) {
     }
 
@@ -26,7 +26,7 @@ final readonly class RemoveStudentFromLectureHandler
             throw LectureEnrollmentException::forbiddenRemoval();
         }
 
-        if (!$this->lectureEnrollmentRepository->deleteByLectureAndStudent($lectureId, $studentId)) {
+        if (!$this->lectureParticipantRepository->removeStudent($lectureId, $studentId)) {
             throw LectureEnrollmentException::enrollmentNotFound();
         }
     }

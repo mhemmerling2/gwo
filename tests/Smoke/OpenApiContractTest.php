@@ -26,6 +26,8 @@ final class OpenApiContractTest extends ApiTestCase
         self::assertStringContainsString('ErrorResponse', $content);
         self::assertStringContainsString('QueuedEnrollment', $content);
         self::assertStringContainsString('EnrollmentRequest', $content);
+        self::assertStringContainsString('enrollment_in_progress', $content);
+        self::assertStringContainsString("'409':", $content);
     }
 
     #[Test]

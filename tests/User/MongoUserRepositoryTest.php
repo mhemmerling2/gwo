@@ -28,7 +28,10 @@ final class MongoUserRepositoryTest extends ApiTestCase
 
         /** @var UserRepositoryInterface $userRepository */
         $userRepository = $this->httpClient->getContainer()->get(UserRepositoryInterface::class);
-        $resolvedUser = $userRepository->getByApiKey($user->getApiKey());
+        $apiKey = $user->getApiKey();
+        self::assertIsString($apiKey);
+
+        $resolvedUser = $userRepository->getByApiKey($apiKey);
 
         self::assertNotNull($resolvedUser);
         self::assertTrue($resolvedUser->getId()->equals($user->getId()));
@@ -45,11 +48,14 @@ final class MongoUserRepositoryTest extends ApiTestCase
 
         $loadedUser = $userRepository->getById($user->getId());
         self::assertNotNull($loadedUser);
-        self::assertSame('', $loadedUser->getApiKey());
+        self::assertNull($loadedUser->getApiKey());
 
         $userRepository->save($loadedUser);
 
-        $resolvedUser = $userRepository->getByApiKey($user->getApiKey());
+        $apiKey = $user->getApiKey();
+        self::assertIsString($apiKey);
+
+        $resolvedUser = $userRepository->getByApiKey($apiKey);
         self::assertNotNull($resolvedUser);
         self::assertTrue($resolvedUser->getId()->equals($user->getId()));
     }

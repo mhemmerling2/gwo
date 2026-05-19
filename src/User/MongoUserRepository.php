@@ -44,8 +44,9 @@ final class MongoUserRepository implements UserRepositoryInterface
             $existingApiKeyHash = $existingDocument['apiKeyHash'];
         }
 
-        $apiKeyHash = trim($user->getApiKey()) !== ''
-            ? $this->apiKeyEncoder->encode($user->getApiKey())
+        $plainApiKey = $user->getApiKey();
+        $apiKeyHash = is_string($plainApiKey) && trim($plainApiKey) !== ''
+            ? $this->apiKeyEncoder->encode($plainApiKey)
             : $existingApiKeyHash;
 
         if ($apiKeyHash === null) {
@@ -103,7 +104,7 @@ final class MongoUserRepository implements UserRepositoryInterface
         return new User(
             id: new StringId(value: $id),
             name: $name,
-            apiKey: '',
+            apiKey: null,
             role: UserRole::from(value: $role),
         );
     }

@@ -117,15 +117,6 @@ Pełna weryfikacja:
 make qa
 ```
 
-## Quality Gate
-
-Repo ma workflow CI uruchamiany na `push` i `pull_request`:
-- buduje środowisko Dockera,
-- uruchamia pełny gate `make qa` (testy + coverage threshold + PHPStan),
-- zapisuje artifact z raportem coverage (`clover.xml`).
-
-Dzięki temu wynik lokalny i wynik w review są spójne.
-
 ## Uwagi
 
 Wszystkie chronione endpointy korzystają z nagłówka `X-Api-Key`.

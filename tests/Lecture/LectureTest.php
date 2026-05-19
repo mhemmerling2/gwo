@@ -8,6 +8,7 @@ use Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Tests\ApiTestCase;
 use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use MongoDB\BSON\UTCDateTime;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -45,6 +46,14 @@ final class LectureTest extends ApiTestCase
         self::assertSame('Distributed Systems 101', $savedLecture->getName());
         self::assertSame(25, $savedLecture->getStudentLimit());
         self::assertTrue($savedLecture->getLecturerId()->equals($lecturer->getId()));
+
+        $storedLecture = $this->mongoClient()
+            ->selectCollection($this->databaseName(), 'lectures')
+            ->findOne(['id' => $payload['id']]);
+
+        self::assertNotNull($storedLecture);
+        self::assertInstanceOf(UTCDateTime::class, $storedLecture['startDate'] ?? null);
+        self::assertInstanceOf(UTCDateTime::class, $storedLecture['endDate'] ?? null);
     }
 
     #[Test]

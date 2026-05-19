@@ -10,7 +10,7 @@ final readonly class GetStudentLecturesHandler
 {
     public function __construct(
         private LectureRepositoryInterface $lectureRepository,
-        private LectureEnrollmentRepositoryInterface $lectureEnrollmentRepository,
+        private LectureParticipantRepositoryInterface $lectureParticipantRepository,
     ) {
     }
 
@@ -20,7 +20,7 @@ final readonly class GetStudentLecturesHandler
     public function __invoke(StringId $studentId): array
     {
         $lectures = $this->lectureRepository->getByIds(
-            $this->lectureEnrollmentRepository->getLectureIdsByStudent($studentId),
+            $this->lectureParticipantRepository->findLectureIdsByStudent($studentId),
         );
 
         usort(

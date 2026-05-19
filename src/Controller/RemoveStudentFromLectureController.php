@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Controller;
 
-use Gwo\AppsRecruitmentTask\Controller\Mapper\LectureEnrollmentErrorResponseMapper;
+use Gwo\AppsRecruitmentTask\Controller\Dto\ErrorResponseDto;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException;
 use Gwo\AppsRecruitmentTask\Lecture\RemoveStudentFromLectureHandler;
+use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\User\User;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Gwo\AppsRecruitmentTask\Util\StringId;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -27,7 +29,6 @@ final readonly class RemoveStudentFromLectureController
 {
     public function __construct(
         private RemoveStudentFromLectureHandler $removeStudentFromLectureHandler,
-        private LectureEnrollmentErrorResponseMapper $errorResponseMapper,
     ) {
     }
 
@@ -43,9 +44,30 @@ final readonly class RemoveStudentFromLectureController
                 lecturerId: $lecturer->getId(),
             );
         } catch (LectureEnrollmentException $exception) {
-            return $this->errorResponseMapper->map($exception);
+            return $this->errorResponse($exception);
         }
 
         return new Response(content: '', status: Response::HTTP_NO_CONTENT);
+    }
+
+    private function errorResponse(LectureEnrollmentException $exception): JsonResponse
+    {
+        $errorCode = $exception->getErrorCode();
+
+        return new JsonResponse(
+            data: new ErrorResponseDto(
+                error: $errorCode,
+                message: $exception->getMessage(),
+            ),
+            status: match ($errorCode) {
+                ApiErrorCode::LECTURE_NOT_FOUND,
+                ApiErrorCode::ENROLLMENT_NOT_FOUND => Response::HTTP_NOT_FOUND,
+                ApiErrorCode::FORBIDDEN => Response::HTTP_FORBIDDEN,
+                ApiErrorCode::LECTURE_STARTED,
+                ApiErrorCode::ALREADY_ENROLLED,
+                ApiErrorCode::LECTURE_FULL => Response::HTTP_CONFLICT,
+                default => Response::HTTP_BAD_REQUEST,
+            },
+        );
     }
 }

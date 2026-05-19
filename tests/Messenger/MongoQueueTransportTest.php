@@ -13,6 +13,7 @@ use MongoDB\Collection;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Messenger\Exception\LogicException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Stamp\DelayStamp;
 use Symfony\Component\Messenger\Stamp\TransportMessageIdStamp;
@@ -89,6 +90,56 @@ final class MongoQueueTransportTest extends KernelTestCase
 
         $received = iterator_to_array($transport->get());
         self::assertCount(1, $received);
+    }
+
+    #[Test]
+    public function itDiscardsMalformedQueueDocumentInsteadOfLeavingItClaimed(): void
+    {
+        $transport = $this->createTransport('transport_test_invalid_structure');
+        $collection = $this->collection('transport_test_invalid_structure');
+        $collection->insertOne([
+            '_id' => 'broken-message',
+            'queue' => 'enrollments',
+            'body' => ['unexpected-array-body'],
+            'headers' => [],
+            'availableAt' => 0,
+            'claimedAt' => null,
+            'createdAt' => 0,
+        ]);
+
+        try {
+            iterator_to_array($transport->get());
+            self::fail('Expected malformed queue message to raise a logic exception.');
+        } catch (LogicException $exception) {
+            self::assertSame('Queue document has invalid structure.', $exception->getMessage());
+        }
+
+        self::assertSame(0, $collection->countDocuments(['_id' => 'broken-message']));
+    }
+
+    #[Test]
+    public function itDiscardsUndecodableQueueDocumentInsteadOfRetryingForever(): void
+    {
+        $transport = $this->createTransport('transport_test_invalid_payload');
+        $collection = $this->collection('transport_test_invalid_payload');
+        $collection->insertOne([
+            '_id' => 'undecodable-message',
+            'queue' => 'enrollments',
+            'body' => '{"not":"a messenger envelope"}',
+            'headers' => [],
+            'availableAt' => 0,
+            'claimedAt' => null,
+            'createdAt' => 0,
+        ]);
+
+        try {
+            iterator_to_array($transport->get());
+            self::fail('Expected undecodable queue message to raise a logic exception.');
+        } catch (LogicException $exception) {
+            self::assertSame('Queue document could not be decoded.', $exception->getMessage());
+        }
+
+        self::assertSame(0, $collection->countDocuments(['_id' => 'undecodable-message']));
     }
 
     #[Test]

@@ -33,7 +33,7 @@ services:
         arguments:
             $databaseName: '%database_name%'
 
-    Gwo\AppsRecruitmentTask\Lecture\MongoLectureEnrollmentRepository:
+    Gwo\AppsRecruitmentTask\Lecture\MongoLectureParticipantRepository:
         arguments:
             $databaseName: '%database_name%'
 
@@ -45,18 +45,14 @@ services:
         arguments:
             $databaseName: '%database_name%'
 
-    Gwo\AppsRecruitmentTask\Persistence\DatabaseClient:
-        arguments:
-            $databaseName: '%database_name%'
-
     Gwo\AppsRecruitmentTask\User\UserRepositoryInterface:
         alias: Gwo\AppsRecruitmentTask\User\MongoUserRepository
 
     Gwo\AppsRecruitmentTask\Lecture\LectureRepositoryInterface:
         alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureRepository
 
-    Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface:
-        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureEnrollmentRepository
+    Gwo\AppsRecruitmentTask\Lecture\LectureParticipantRepositoryInterface:
+        alias: Gwo\AppsRecruitmentTask\Lecture\MongoLectureParticipantRepository
 
     Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface:
         alias: Gwo\AppsRecruitmentTask\Lecture\MongoEnrollmentRequestRepository

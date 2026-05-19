@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests;
 
-use Gwo\AppsRecruitmentTask\Persistence\DatabaseClient;
 use Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager;
 use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
@@ -32,9 +31,7 @@ abstract class ApiTestCase extends WebTestCase
 
         $this->httpClient = static::createClient();
 
-        /** @var DatabaseClient $databaseClient */
-        $databaseClient = $this->httpClient->getContainer()->get(DatabaseClient::class);
-        $databaseClient->dropDatabase();
+        $this->mongoClient()->dropDatabase($this->databaseName());
 
         /** @var MongoIndexManager $indexManager */
         $indexManager = $this->httpClient->getContainer()->get(MongoIndexManager::class);
@@ -102,8 +99,11 @@ abstract class ApiTestCase extends WebTestCase
      */
     protected function authHeaders(User $user): array
     {
+        $apiKey = $user->getApiKey();
+        self::assertIsString($apiKey);
+
         return [
-            'HTTP_X_API_KEY' => $user->getApiKey(),
+            'HTTP_X_API_KEY' => $apiKey,
         ];
     }
 

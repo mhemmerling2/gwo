@@ -2,6 +2,6 @@
 /.phpunit.cache/
 /var/
 /.idea/*
-!/.idea/php.xml
+.php-version
 .DS_Store
 /config/reference.php

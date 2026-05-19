@@ -9,7 +9,7 @@ use Gwo\AppsRecruitmentTask\Controller\Dto\QueuedEnrollmentResponseDto;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollmentRequestRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Lecture\EnrollStudentToLectureCommand;
 use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentException;
-use Gwo\AppsRecruitmentTask\Lecture\LectureEnrollmentRepositoryInterface;
+use Gwo\AppsRecruitmentTask\Lecture\LectureParticipantRepositoryInterface;
 use Gwo\AppsRecruitmentTask\Shared\ApiErrorCode;
 use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\Util\StringId;
@@ -32,7 +32,7 @@ final readonly class EnrollStudentToLectureController
     public function __construct(
         private MessageBusInterface $messageBus,
         private EnrollmentRequestRepositoryInterface $enrollmentRequestRepository,
-        private LectureEnrollmentRepositoryInterface $lectureEnrollmentRepository,
+        private LectureParticipantRepositoryInterface $lectureParticipantRepository,
     ) {
     }
 
@@ -40,7 +40,7 @@ final readonly class EnrollStudentToLectureController
     {
         $lectureStringId = StringId::fromRoute($lectureId);
 
-        if ($this->lectureEnrollmentRepository->existsByLectureAndStudent($lectureStringId, $student->getId())) {
+        if ($this->lectureParticipantRepository->isStudentEnrolled($lectureStringId, $student->getId())) {
             $exception = LectureEnrollmentException::alreadyEnrolled();
 
             return new JsonResponse(

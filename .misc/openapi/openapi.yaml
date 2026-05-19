@@ -74,6 +74,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Student is already enrolled or an enrollment request is already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /students/me/enrollment-requests/{requestId}:
     get:
       tags: [Enrollments]
@@ -174,21 +180,18 @@ components:
       required: true
       schema:
         type: string
-      example: 4df27c7e-f7d4-4f5b-9c10-1d3fd887611a
     StudentId:
       name: studentId
       in: path
       required: true
       schema:
         type: string
-      example: 3b911cea-77c6-4f06-989b-3d8f9df08efb
     RequestId:
       name: requestId
       in: path
       required: true
       schema:
         type: string
-      example: 1f0cc4da-d92b-4f4c-a048-f95d12f6f7f2
   schemas:
     CreateLectureRequest:
       type: object
@@ -288,5 +291,6 @@ components:
             - enrollment_not_found
             - enrollment_error
             - enrollment_request_not_found
+            - enrollment_in_progress
         message:
           type: string

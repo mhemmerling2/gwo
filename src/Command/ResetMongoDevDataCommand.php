@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Command;
 
-use Gwo\AppsRecruitmentTask\Persistence\DatabaseClient;
 use Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager;
+use MongoDB\Client;
 use Override;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,8 +20,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class ResetMongoDevDataCommand extends Command
 {
     public function __construct(
-        private readonly DatabaseClient $databaseClient,
+        private readonly Client $mongoClient,
         private readonly MongoIndexManager $mongoIndexManager,
+        #[Autowire(param: 'database_name')]
+        private readonly string $databaseName,
         #[Autowire(param: 'kernel.environment')]
         private readonly string $environment,
     ) {
@@ -37,7 +39,7 @@ final class ResetMongoDevDataCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->databaseClient->dropDatabase();
+        $this->mongoClient->dropDatabase($this->databaseName);
         $this->mongoIndexManager->ensureIndexes();
 
         $output->writeln('<info>MongoDB data was reset and indexes were recreated.</info>');

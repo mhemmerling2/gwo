@@ -17,7 +17,7 @@ final readonly class User implements UserInterface
     public function __construct(
         private StringId $id,
         private string $name,
-        private string $apiKey,
+        private ?string $apiKey,
         private UserRole $role,
     ) {
     }
@@ -32,7 +32,7 @@ final readonly class User implements UserInterface
         return $this->name;
     }
 
-    public function getApiKey(): string
+    public function getApiKey(): ?string
     {
         return $this->apiKey;
     }

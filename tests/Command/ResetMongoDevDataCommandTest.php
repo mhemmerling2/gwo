@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Gwo\AppsRecruitmentTask\Tests\Command;
 
-use Gwo\AppsRecruitmentTask\Persistence\DatabaseClient;
 use Gwo\AppsRecruitmentTask\Persistence\MongoIndexManager;
 use Gwo\AppsRecruitmentTask\User\User;
 use Gwo\AppsRecruitmentTask\User\UserRepositoryInterface;
 use Gwo\AppsRecruitmentTask\User\UserRole;
 use Gwo\AppsRecruitmentTask\Util\StringId;
+use MongoDB\Client;
 use Override;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -51,9 +51,11 @@ final class ResetMongoDevDataCommandTest extends KernelTestCase
 
         self::bootKernel();
 
-        /** @var DatabaseClient $databaseClient */
-        $databaseClient = static::getContainer()->get(DatabaseClient::class);
-        $databaseClient->dropDatabase();
+        /** @var Client $mongoClient */
+        $mongoClient = static::getContainer()->get(Client::class);
+        $databaseName = static::getContainer()->getParameter('database_name');
+        self::assertIsString($databaseName);
+        $mongoClient->dropDatabase($databaseName);
 
         /** @var MongoIndexManager $indexManager */
         $indexManager = static::getContainer()->get(MongoIndexManager::class);
